@@ -1,0 +1,34 @@
+{
+	"short_name": "CV2",
+	"name": "CloudSeeker CV2",
+	"description": "Download the latest Fall Guys content file and view upcoming shows, item shops, challenges, live events and much more!",
+	"icons":[
+		{
+			"src": "/favicon.ico",
+			"sizes": "72x72 96x96 128x128 256x256"
+		},
+		{
+			"src": "/assets/Cloud_3D.png",
+			"sizes": "256x256 400x400"
+		}
+	],
+	"start_url": "/cv2/",
+	"background_color": "#ff8dfc",
+	"display": "standalone",
+	"scope": "/cv2/",
+	"theme_color": "#f8f9fa",
+	"shortcuts": [
+		{
+			"name": "Download content file",
+			"short_name": "Download",
+			"description": "Download the latest Fall Guys content file.",
+			"url": "/cv2/"
+		},
+		{
+			"name": "Show Schedule",
+			"short_name": "Shows",
+			"description": "See current and upcoming Fall Guys shows.",
+			"url": "/cv2/shows/"
+		}
+	]
+}
