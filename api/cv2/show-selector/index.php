@@ -171,7 +171,7 @@
                                                                 				$result_dlcimg = array_filter($arr, function($obj)use($id){return !empty($obj['id']) && $obj['id'] === $id;});
                                                                 				$key_4 = key($result_dlcimg);
 												$dlcimg = $result_dlcimg[$key_4]["dlc_item"]["base"] . $result_dlcimg[$key_4]["dlc_item"]["path"];
-												$actual_show_fr = ["id" => $beta->id, "show_name" => $show_name, "show_desc" => $show_desc,  "begins" => $starts_at, "ends" => $ends_at, "roundpool" => $beta->default_episode, "image" => $dlcimg];
+												$actual_show_fr = ["id" => $beta->id, "show_name" => $show_name, "show_desc" => $show_desc,  "begins" => $starts_at + 3600, "ends" => $ends_at + 3600, "roundpool" => $beta->default_episode, "image" => $dlcimg];
 												$shows_local[$beta->id] = $actual_show_fr;
 											}
 											else{
