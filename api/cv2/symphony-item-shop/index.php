@@ -122,9 +122,9 @@
 						$starts_at = 0;
 						$ends_at = 0;
 						if(!empty($result[$key]["parameters"]["data"]["start"]))
-							$starts_at = strtotime($result[$key]["parameters"]["data"]["start"]);
+							$starts_at = strtotime($result[$key]["parameters"]["data"]["start"]) + 3600;
 						if(!empty($result[$key]["parameters"]["data"]["end"]))
-							$ends_at = strtotime($result[$key]["parameters"]["data"]["end"]);
+							$ends_at = strtotime($result[$key]["parameters"]["data"]["end"]) + 3600;
 						foreach($alpha->bundle_slots as $beta){
 							$cosmetics = (array)[];
 							$layout = (object)["width" => $beta->layout->tile_width, "height" => $beta->layout->tile_height];
