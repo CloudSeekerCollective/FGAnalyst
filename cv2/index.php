@@ -20,13 +20,13 @@
 <?php include("header.php"); ?>
 <br>
 <div class="container text-center" id="cv2-base">
-	<h1>Download the latest Fall Guys content file</h1>
-	<p>Content version: <span id="content_version"></span></p>
+	<h1 id="cv2-main-header">Download the latest Fall Guys content file</h1>
+	<p id="content_version">Content version: ...</p>
 	<div class="cv2-download-loading"></div>
 	<div class="d-grid gap-3">
 	<a class="btn btn-lg btn-primary" id="cv2-download-content" href="#" download>Download content file</a>
 	<a class="btn btn-lg btn-outline-secondary" id="cv2-download-content-2" target="_blank" href="#">View content file in browser</a></div><hr>
-	<div class="alert alert-warning">More features are coming soon! Follow us on <a href="https://twitter.com/CloudSeekerEN" target="_blank">Twitter/X</a> for more CV2 updates!</div>
+	<div class="alert alert-warning" id="cv2_coming_soon">More features are coming soon! Follow us on <a href="https://twitter.com/CloudSeekerEN" target="_blank">Twitter/X</a> for more CV2 updates!</div>
 	<div class="copyright">CV2 is a Fall Guys content viewer and downloader made by The CloudSeeker Collective.<br>
 	The CloudSeeker Collective is not affiliated with Mediatonic and Epic Games. Fall Guys and the "Fall Guys" characters are registered trademarks of Mediatonic and Epic Games.<br>
 	<b>All information on this website is subject to change.</b></div>
