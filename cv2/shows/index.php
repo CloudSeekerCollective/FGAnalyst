@@ -23,12 +23,12 @@
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h4 class="modal-title" id="exampleModalLabel"><span id="roundpool_view_show_name"></span>Roundpool</h4>
+				<h4 class="modal-title" id="roundpool_view_show_name_v2"><span id="roundpool_view_show_name"></span>Roundpool</h4>
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
 			<div class="modal-body">
-				<p>Fallback round: <span id="fallback-round">Loading...</span></p>
-				<p>Rounds available:</p>
+				<p id="fallback-round">Fallback round: <span>Loading...</span></p>
+				<p id="rounds_available">Rounds available:</p>
 				<div id="roundpool_view">
 					<div class="card bg-warning text-white" style="width: 18rem;">
 						<div class="card-body">
@@ -46,7 +46,7 @@
 	</div>
 </div>
 <div class="container text-center" id="cv2-base">
-	<h1>Show Schedule</h1>
+	<h1 id="cv2-shows-header">Show Schedule</h1>
 	<!--<div class="alert alert-primary"><b>Note:</b> The first live show in the first section is personalised for everyone. <b>That show will appear differently for you in game.</b> Usually, it's a rotation between Solos, Squads and another limited time show.</div>-->
 
 	<div class="cv2-download-loading"></div>
@@ -90,9 +90,9 @@
 			<input type="text" class="form-control form-control-lg" id="cv2_roundpool_lookup" placeholder="Insert something like levels_episode.episode_s10_solo_show">
 			<label for="cv2_roundpool_lookup">Search for a roundpool by ID...</label>
 		</div>
-		<button onclick="getShowRoundpool($('#cv2_roundpool_lookup')[0].value);" type="button" class="btn btn-primary btn-lg">Check</button>
+		<button id="cv2_roundpool_check" onclick="getShowRoundpool($('#cv2_roundpool_lookup')[0].value);" type="button" class="btn btn-primary btn-lg">Check</button>
 	</div><hr>
-	<div class="alert alert-warning">More features are coming soon! Follow us on <a href="https://twitter.com/CloudSeekerEN" target="_blank">Twitter/X</a> for more CV2 updates!</div>
+	<div class="alert alert-warning" id="cv2_coming_soon">More features are coming soon! Follow us on <a href="https://twitter.com/CloudSeekerEN" target="_blank">Twitter/X</a> for more CV2 updates!</div>
 	<div class="copyright">CV2 is a Fall Guys content viewer and downloader made by The CloudSeeker Collective.<br>
 	The CloudSeeker Collective is not affiliated with Mediatonic and Epic Games. Fall Guys and the "Fall Guys" characters are registered trademarks of Mediatonic and Epic Games.<br>
 	<b>All information on this website is subject to change.</b></div>
