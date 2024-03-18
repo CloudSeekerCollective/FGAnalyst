@@ -149,7 +149,7 @@ function getShows(){
 					var thing = document.createElement("h2");
 					document.getElementById(div.id).appendChild(thing);
 					var table = document.createElement("table");
-					table.classList = "table table-bordered";
+					table.classList = "table table-bordered collapse";
 					table.id = "cv2-show-table-" + currentValue[0];
 					table.innerHTML = "<tr><th>Image</th><th>Name</th><th>Description</th><th>IDs</th><th>Begins</th><th>Ends</th><th>Rounds</th></tr>";
 					document.getElementById(div.id).appendChild(table);
@@ -158,7 +158,7 @@ function getShows(){
 							return;
 						totalShows++;
 						var tr_classlist = "";
-						thing.innerHTML = currentValue[1].section_name.toUpperCase();
+						thing.innerHTML = currentValue[1].section_name.toUpperCase() + ' <button data-bs-toggle="collapse" data-bs-target="#'+ div.id +'" aria-expanded="false" class="btn btn-primary"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-toggles" viewBox="0 0 16 16"><path d="M4.5 9a3.5 3.5 0 1 0 0 7h7a3.5 3.5 0 1 0 0-7zm7 6a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5m-7-14a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5m2.45 0A3.5 3.5 0 0 1 8 3.5 3.5 3.5 0 0 1 6.95 6h4.55a2.5 2.5 0 0 0 0-5zM4.5 0h7a3.5 3.5 0 1 1 0 7h-7a3.5 3.5 0 1 1 0-7"/></svg></button>';
 						if(typeof(currentValue2[1].begins) == "number"){
 							var start_date = new Date(currentValue2[1].begins * 1000);
 							var start_date = start_date.toLocaleString();
@@ -252,7 +252,7 @@ function getDiscoveryShows(){
 					var thing = document.createElement("h2");
 					document.getElementById(div.id).appendChild(thing);
 					var table = document.createElement("div");
-					table.classList = "";
+					table.classList = "collapse";
 					table.id = "cv2-discovery-show-table-" + currentValue[0];
 					//table.innerHTML = "";
 					document.getElementById(div.id).appendChild(table);
@@ -294,7 +294,7 @@ function getDiscoveryShows(){
 							author = currentValue2[1].author.eos;
 						totalShows++;
 						var tr_classlist = "";
-						thing.innerHTML = currentValue[1].section_name.toUpperCase();
+						thing.innerHTML = currentValue[1].section_name.toUpperCase() + ' <button data-bs-toggle="collapse" data-bs-target="#'+ table.id +'" aria-expanded="false" class="btn btn-primary"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-toggles" viewBox="0 0 16 16"><path d="M4.5 9a3.5 3.5 0 1 0 0 7h7a3.5 3.5 0 1 0 0-7zm7 6a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5m-7-14a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5m2.45 0A3.5 3.5 0 0 1 8 3.5 3.5 3.5 0 0 1 6.95 6h4.55a2.5 2.5 0 0 0 0-5zM4.5 0h7a3.5 3.5 0 1 1 0 7h-7a3.5 3.5 0 1 1 0-7"/></svg></button>';
 						table.innerHTML += "<div class='card mb-2' style='text-align: left !important;'><div class='card-body'><div class='row'><div class='col-sm-7'><h5 class='card-title'><b>"+ currentValue2[1].title +" "+ gamemode +"</b></h5><h6 class='card-subtitle'>By <b>"+ author +"</b> | "+ currentValue2[1].share_code +" | "+ tags +"</h6><p class='card-text'>"+ level_desc +"<br>👍 "+ currentValue2[1].ratings.likes +" | 👎 "+ currentValue2[1].ratings.dislikes +"</p></div><div class='col-sm-5'><img src='"+ currentValue2[1].image  +"' class='img-fluid rounded' /></div></div></div><br>";
 					});
 				});
