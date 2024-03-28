@@ -1,5 +1,7 @@
 var downloadAPI = "https://cloudseeker.xyz/api/cv2/download-direct/";
 var showsAPI = "https://cloudseeker.xyz/api/cv2/show-selector/";
+var newsAPI = "https://cloudseeker.xyz/api/cv2/newsfeed/";
+var basicAPI = "https://cloudseeker.xyz/api/cv2/basic/";
 var shopsAPI = "https://cloudseeker.xyz/api/cv2/symphony-item-shop/";
 var showsRoundpoolAPI = "https://cloudseeker.xyz/api/cv2/show-roundpools/";
 var creativeAPI = "https://cloudseeker.xyz/api/cv2/creative/";
@@ -52,6 +54,9 @@ document.addEventListener("DOMContentLoaded", function(){
 	}
 	else if(currentResource == "sym-item-shop"){
 		getShops();
+	}
+	else if(currentResource == "news"){
+		getNewsfeeds();
 	}
 	else if(currentResource == "creative"){
 		let get_args = new URLSearchParams(window.location.search);
@@ -200,6 +205,89 @@ function getShows(){
 					console.log(totalShows);
 					$(".cv2-download-loading").html('<div class="alert alert-primary"><b>Note:</b> ALL upcoming shows are visible. Only '+ totalShows +' out of '+ totalShows +' shows are being shown above. ALL will be revealed right here, right now on CV2.</div>');
 				}
+				$("#locale")[0].disabled = false;
+				if(typeof(data.notice) != "undefined" && data.notice != null)
+					$(".cv2-download-loading").html('<div class="alert alert-primary">'+ data.notice +'</div>');
+			}
+			else if(data.xstatus == "successWithPrecautions"){
+				$("#cv2-download-content").css("display", "block");
+				$("#cv2-download-content").html("Download content file (" + data.contentVersion + ")");
+				$("#cv2-download-content")[0].href = data.download;
+				$(".cv2-download-loading").html('<div class="alert alert-warning">' + data.notice + '</div>');
+				$("#locale")[0].disabled = false;
+			}
+			else{
+				if(typeof(data.errorCode) == "undefined"){
+					$(".cv2-download-loading").html('<div class="alert alert-danger">An unknown error occured...</div>');
+					return;
+				}
+				if(data.errorCode == "x_P_1000")
+					$(".cv2-download-loading").html('<div class="alert alert-primary">' + data.error + '</div>');
+				else
+					$(".cv2-download-loading").html('<div class="alert alert-danger">' + data.error + ' (Error code '+ data.errorCode +')</div>');
+			}
+		}
+		else{
+			$(".cv2-download-loading").html('<div class="alert alert-danger">A network error occured!</div>');
+		}
+	}).fail(function(){
+		$(".cv2-download-loading").html('<div class="alert alert-danger">A network error occured!<br>Retrying in a few seconds...</div>');
+		var retry = setTimeout(function(){getShows();}, 5000);
+	});
+}
+
+function getNewsfeeds(){
+	var totalShows = 0;
+	$("#cv2_newsfeeds_carousel").css("display", "none");
+	$("#locale")[0].disabled = true;
+	$("#cv2_newsfeeds").html('');
+	$(".carousel-indicators")[0].innerHTML = "";
+	$(".cv2-download-loading").html('<div class="spinner-border"></div>');
+	$.get(newsAPI + "?locale=" + downloadLocale, function(data, status){
+		console.log(status.toString());
+		if(status.toString() == "success"){
+			if(data.xstatus == "success"){
+				//$("#cv2-download-content")[0].href = data.download;
+				$(".cv2-download-loading").html('');
+				data.newsfeeds.sort((a, b) => a.starts_at - b.starts_at);
+				Object.entries(data.newsfeeds).forEach(function(currentValue){
+					if(Object.entries(currentValue[1]).length <= 2)
+						return;
+					$(".carousel-indicators")[0].innerHTML += '<button type="button" data-bs-target="#cv2_newsfeeds_carousel" data-bs-slide-to="'+ (totalShows) +'" class="carousel-indicator"></button>';
+					var div = document.createElement("div");
+					div.id = "cv2-news-id-" + currentValue[0];
+					div.classList = "carousel-item";
+					var title = "";
+					var ead = "";
+					var colour = "0,0,0";
+					if(typeof(currentValue[1].header) != "null" && currentValue[1].header != ""){
+						title = currentValue[1].header + ": " + currentValue[1].title;
+					}
+					else{
+						title = currentValue[1].title;
+					}
+					if(typeof(currentValue[1].ends_at_desc) != "null" && currentValue[1].ends_at_desc != ""){
+						ead = "<span class=\"badge rounded-pill text-bg-dark\">Ends At: " + currentValue[1].ends_at_desc + "</span>";
+					}
+					if(Math.round(Date.now() / 1000) > currentValue[1].starts_at && Math.round(Date.now() / 1000) < (currentValue[1].ends_at * 1000) || currentValue[1].ends_at == null){
+						colour = "25,135,84";
+					}
+					var starts = new Date(currentValue[1].starts_at * 1000);
+					starts = starts.toLocaleString();
+					var ends = new Date(currentValue[1].ends_at * 1000);
+					ends = ends.toLocaleString();
+					div.innerHTML = '<img class="d-block w-100" alt="..." src="'+ currentValue[1].image +'"><div class="carousel-caption rounded text-white" style="background: rgba('+ colour +',0.5)"><h2>'+ title +'</h2><h3>'+ ead +'</h3><p>'+ currentValue[1].message +'<br>Starts At: '+ starts +'<br>Ends At: '+ ends +'</p></div>';
+					document.getElementById("cv2_newsfeeds").appendChild(div);
+					$("#cv2_newsfeeds_carousel").css("display", "block");
+					totalShows++;
+				});
+				// lol, Lmao even
+				if(getRNG(1, 1000) == 1){
+					console.log(totalShows);
+					$(".cv2-download-loading").html('<div class="alert alert-primary"><b>Note:</b> ALL upcoming shows are visible. Only '+ totalShows +' out of '+ totalShows +' shows are being shown above. ALL will be revealed right here, right now on CV2.</div>');
+				}
+				$(".carousel-indicator")[0].classList = "carousel-indicator active";
+				$(".carousel-item")[0].classList = "carousel-item active";
 				$("#locale")[0].disabled = false;
 				if(typeof(data.notice) != "undefined" && data.notice != null)
 					$(".cv2-download-loading").html('<div class="alert alert-primary">'+ data.notice +'</div>');
