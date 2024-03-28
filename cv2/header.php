@@ -30,6 +30,9 @@ h2{
         <li class="nav-item">
           <a class="nav-link" id="shops-navlink" href="/cv2/sym-item-shop/" style="margin-right: 10px;">Item Shop</a>
         </li>
+	<li class="nav-item">
+          <a class="nav-link" id="newsfeed-navlink" href="/cv2/newsfeed/" style="margin-right: 10px;">Newsfeeds</a>
+        </li>
         <li class="nav-item">
           <a class="nav-link" id="creative-navlink" href="/cv2/creative/" style="margin-right: 10px;">Creative</a>
         </li>
