@@ -276,7 +276,7 @@ function getNewsfeeds(){
 					starts = starts.toLocaleString();
 					var ends = new Date(currentValue[1].ends_at * 1000);
 					ends = ends.toLocaleString();
-					div.innerHTML = '<img class="d-block w-100" alt="..." src="'+ currentValue[1].image +'"><div class="carousel-caption rounded text-white" style="background: rgba('+ colour +',0.5)"><h2>'+ title +'</h2><h3>'+ ead +'</h3><p>'+ currentValue[1].message +'<br>Starts At: '+ starts +'<br>Ends At: '+ ends +'</p></div>';
+					div.innerHTML = '<img class="" alt="..." src="'+ currentValue[1].image +'"><div class="carousel-caption rounded text-white" style="background: rgba('+ colour +',0.5)"><h2>'+ title +'</h2><h3>'+ ead +'</h3><p>'+ currentValue[1].message +'<br>Starts At: '+ starts +'<br>Ends At: '+ ends +'</p></div>';
 					document.getElementById("cv2_newsfeeds").appendChild(div);
 					$("#cv2_newsfeeds_carousel").css("display", "block");
 					totalShows++;
@@ -383,7 +383,7 @@ function getDiscoveryShows(){
 						totalShows++;
 						var tr_classlist = "";
 						thing.innerHTML = currentValue[1].section_name.toUpperCase() + ' <button data-bs-toggle="collapse" data-bs-target="#'+ table.id +'" aria-expanded="true" class="btn btn-primary"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-toggles" viewBox="0 0 16 16"><path d="M4.5 9a3.5 3.5 0 1 0 0 7h7a3.5 3.5 0 1 0 0-7zm7 6a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5m-7-14a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5m2.45 0A3.5 3.5 0 0 1 8 3.5 3.5 3.5 0 0 1 6.95 6h4.55a2.5 2.5 0 0 0 0-5zM4.5 0h7a3.5 3.5 0 1 1 0 7h-7a3.5 3.5 0 1 1 0-7"/></svg></button>';
-						table.innerHTML += "<div class='card mb-2' style='text-align: left !important;'><div class='card-body'><div class='row'><div class='col-sm-7'><h5 class='card-title'><b>"+ currentValue2[1].title +" "+ gamemode +"</b></h5><h6 class='card-subtitle'>By <b>"+ author +"</b> | "+ currentValue2[1].share_code +" | "+ tags +"</h6><p class='card-text'>"+ level_desc +"<br>👍 "+ currentValue2[1].ratings.likes +" | 👎 "+ currentValue2[1].ratings.dislikes +"</p></div><div class='col-sm-5'><img src='"+ currentValue2[1].image  +"' class='img-fluid rounded' /></div></div></div><br>";
+						table.innerHTML += "<div class='card mb-2' style='text-align: left !important;'><div class='card-body'><div class='row'><div class='col-sm-7'><h5 class='card-title'><b>"+ currentValue2[1].title +" "+ gamemode +"</b></h5><h6 class='card-subtitle'>By <b>"+ author +"</b> | "+ currentValue2[1].share_code +" | "+ tags +"</h6><p class='card-text'>"+ level_desc +"<br>👍 "+ currentValue2[1].ratings.likes +" | 👎 "+ currentValue2[1].ratings.dislikes +"</p><a href='/cv2/creative/?share_code="+ currentValue2[1].share_code +"'>(Click here to view more info about this level)</a></div><div class='col-sm-5'><img src='"+ currentValue2[1].image  +"' class='img-fluid rounded' /></div></div></div><br>";
 					});
 				});
 				//Object.entries(data.shows.custom_shows).forEach(function(currentValue){
@@ -616,36 +616,41 @@ function getShowRoundpool(roundpool, custom){
 				$("#roundpool_view").html('');
 				var moreInfo = "";
 				var selectedColour = "";
-				if(data.shows.fallback_round.type == "wushu"){
-					moreInfo = data.shows.fallback_round.wushu_id;
+				if(data.shows.fallback_round != ""){
+					if(data.shows.fallback_round.type == "wushu"){
+						moreInfo = data.shows.fallback_round.wushu_id;
+					}
+					switch(data.shows.fallback_round.archetype){
+						case "archetype_final":
+							selectedColour = "var(--bs-warning)";
+						break;
+						case "archetype_race":
+							selectedColour = "var(--bs-success)";
+						break;
+						case "archetype_hunt":
+							selectedColour = "var(--bs-primary-bg-subtle)";
+						break;
+						case "archetype_survival":
+							selectedColour = "#6f42c1";
+						break;
+						case "archetype_logic":
+							selectedColour = "#20c997";
+						break;
+						case "archetype_invisibeans":
+							selectedColour = "black";
+						break;
+						case "archetype_timeattack":
+							selectedColour = "var(--bs-success)";
+						break;
+						case "archetype_team":
+							selectedColour = "#F85200";
+						break;
+					}
+					$("#fallback-round").html('<br><br><div class="card" style="background-color: '+ selectedColour +';"><div class="card-body text-white"><h5 class="card-title"><b>' + data.shows.fallback_round.name + '</b></h5><h6 class="card-subtitle mb-2">' + data.shows.fallback_round.id +'</h6><p class="card-text">' + moreInfo + '</p></div></div>');
 				}
-				switch(data.shows.fallback_round.archetype){
-					case "archetype_final":
-						selectedColour = "var(--bs-warning)";
-					break;
-					case "archetype_race":
-						selectedColour = "var(--bs-success)";
-					break;
-					case "archetype_hunt":
-						selectedColour = "var(--bs-primary-bg-subtle)";
-					break;
-					case "archetype_survival":
-						selectedColour = "#6f42c1";
-					break;
-					case "archetype_logic":
-						selectedColour = "#20c997";
-					break;
-					case "archetype_invisibeans":
-						selectedColour = "black";
-					break;
-					case "archetype_timeattack":
-						selectedColour = "var(--bs-success)";
-					break;
-					case "archetype_team":
-						selectedColour = "#F85200";
-					break;
+				else{
+					$("fallback-round").html("N/A");
 				}
-				$("#fallback-round").html('<br><br><div class="card" style="background-color: '+ selectedColour +';"><div class="card-body text-white"><h5 class="card-title"><b>' + data.shows.fallback_round.name + '</b></h5><h6 class="card-subtitle mb-2">' + data.shows.fallback_round.id +'</h6><p class="card-text">' + moreInfo + '</p></div></div>');
 				Object.entries(data.shows.roundpool).forEach(function(c){
 					console.log(c);
 					switch(c[1].archetype){
