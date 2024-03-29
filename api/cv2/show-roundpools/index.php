@@ -106,6 +106,9 @@
                         echo json_encode($result_object);
                         exit;
                 }
+		$share_codes_list = array();
+		$wushu_levels_ids = array();
+		$wushu_levels_list = array();
 		foreach($_final->levels_episode as $x){
 			// dont mind me either
 			$selected_roundpool = explode(".", $roundpool_obj);
@@ -113,44 +116,48 @@
 				continue;
 			}
 			// what a load of shit
-			if(!empty($x->fallback_round) and !empty($x->roundpool)){
+			if(!empty($x->roundpool)){
 				$data_local = array();
 				$y = array();
-				$arr = json_decode(json_encode($_final->levels_round), true);
-				$id = explode(".", $x->fallback_round);
-                		$result = array_filter($arr, function($obj)use($id){return !empty($obj['id']) && $obj['id'] === $id[1];});
-                		if(!empty($result)){
-                        		$y = $result[key($result)];
-                		}
-				$level_id = $id;
-				$z_count = 0;
-				$s_count = 0;
-				if($y['id'] == $level_id[1]){
-					if(!empty($y["display_name"])){
-						$fb_display = explode(".", $y['display_name']);
-						$sec_id = getLocalisedString($fb_display[1], $_final->localised_strings);
-					}
-					else{
-						$fb_display = "";
-						$sec_id = "";
-					}
-					$type = "unity";
-					$wushu_id = "0000-0000-0000";
-					if(empty($sec_id)){
-						if(!empty($y["scene_type"]["dlc_level"])){
-							$wle = $y["scene_type"]["dlc_level"];
-							$arr = json_decode(json_encode($_final->dlc_levels), true);
-							$id = $wle;
-        	       					$wlv = array_filter($arr, function($obj)use($id){return !empty($obj['id']) && $obj['id'] === $id;});
-							if(!empty($wlv)){
-								$wushu_id = $wlv[key($wlv)]["sharecode"];
-							}
+				if(!empty($x->fallback_round)){
+					$arr = json_decode(json_encode($_final->levels_round), true);
+					$id = explode(".", $x->fallback_round);
+	                		$result = array_filter($arr, function($obj)use($id){return !empty($obj['id']) && $obj['id'] === $id[1];});
+	                		if(!empty($result)){
+	                        		$y = $result[key($result)];
+	                		}
+					$level_id = $id;
+					$z_count = 0;
+					$s_count = 0;
+					if($y['id'] == $level_id[1]){
+						if(!empty($y["display_name"])){
+							$fb_display = explode(".", $y['display_name']);
+							$sec_id = getLocalisedString($fb_display[1], $_final->localised_strings);
 						}
-						$data_local["fallback_round"] = ["name" => "No name (presumably creative level?)", "id" => $y['id'], "archetype" => $y['level_archetype'], "type" => "wushu", "wushu_id" => $wushu_id];
+						else{
+							$fb_display = "";
+							$sec_id = "";
+						}
+						$type = "unity";
+						$wushu_id = "0000-0000-0000";
+						if(empty($sec_id)){
+							if(!empty($y["scene_type"]["dlc_level"])){
+								$wle = $y["scene_type"]["dlc_level"];
+								$arr = json_decode(json_encode($_final->dlc_levels), true);
+								$id = $wle;
+	        	       					$wlv = array_filter($arr, function($obj)use($id){return !empty($obj['id']) && $obj['id'] === $id;});
+								if(!empty($wlv)){
+									$wushu_id = $wlv[key($wlv)]["sharecode"];
+								}
+							}
+							$data_local["fallback_round"] = ["name" => "No name (presumably creative level?)", "id" => $y['id'], "archetype" => $y['level_archetype'], "type" => "wushu", "wushu_id" => $wushu_id];
+						}
+						else{
+							$data_local["fallback_round"] = ["name" => $sec_id, "id" => $y['id'], "archetype" => $y['level_archetype'], "type" => $type];
+						}
 					}
-					else{
-						$data_local["fallback_round"] = ["name" => $sec_id, "id" => $y['id'], "archetype" => $y['level_archetype'], "type" => $type];
-					}
+				}else{
+					$data_local["fallback_round"] = "";
 				}
 				$r_count = 0;
 				$roundpool = array();
@@ -228,50 +235,8 @@
 									$wushu_id = $wlv[key($wlv)]["sharecode"];
 								}
 							}
-							if(!empty($_KNOWN_WUSHU_LEVELS[$wushu_id])){
-								array_push($debug, $_KNOWN_WUSHU_LEVELS[$wushu_id]);
-								$wle_name = $_KNOWN_WUSHU_LEVELS[$wushu_id]["name"];
-								$level_author = $_KNOWN_WUSHU_LEVELS[$wushu_id]["author"];
-							}else{
-								$curl_inst_2 = curl_init();
-								$share_code = $wushu_id;
-
-							        curl_setopt_array($curl_inst_2, array(
-								                CURLOPT_URL => 'https://level-gateway.fallguys.oncatapult.com/level/batch',
-								                CURLOPT_RETURNTRANSFER => true,
-								                CURLOPT_ENCODING => '',
-								                CURLOPT_MAXREDIRS => 10,
-								                CURLOPT_TIMEOUT => 0,
-								                CURLOPT_FOLLOWLOCATION => true,
-								                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-								                CURLOPT_CUSTOMREQUEST => 'POST',
-								                CURLOPT_POSTFIELDS =>'{"share_codes":["'. $share_code .'"]}',
-								                CURLOPT_HTTPHEADER => array(
-                        							'User-Agent: UnityPlayer/2021.3.16f1 (UnityWebRequest/1.0, libcurl/7.84.0-DEV)',
-                        							'X-Unity-Version: 2021.3.16f1',
-                        							'Content-Type: application/json',
-                        							'Authorization: Bearer ' . $curl_done->token
-                							),
-        							));
-
-        							$curl_res_2 = curl_exec($curl_inst_2);
-        							curl_close($curl_inst_2);
-
-        							if($curl_res_2 == false){
-                							triggerErrorFailsafe("Could not connect to the Fall Guys server at this moment", "x_C_4200");
-        							}
-        							$level_data = json_decode($curl_res_2);
-        							if(empty($level_data->snapshots))
-                							continue;
-								$wle_name = $level_data->snapshots[0]->version_metadata->title;
-								if(empty($level_data->snapshots[0]->author->name_per_platform->eos)){
-									$level_data2 = json_decode(json_encode($level_data), true);
-									array_push($debug, $level_author = $level_data2["snapshots"][0]["author"]["name_per_platform"]);
-								}
-								else
-									$level_author = $level_data->snapshots[0]->author->name_per_platform->eos;
-							}
-							$roundpool[$beta["id"]] = [
+							array_push($share_codes_list, $wushu_id);
+							array_push($wushu_levels_list, (object)[
 								"name" => $wle_name, 
 								"id" => $beta['id'], 
 								"archetype" => $beta['level_archetype'],
@@ -284,7 +249,8 @@
 								"variations" => $variations,
 								"wushu_id" => $wushu_id,
 								"wushu_author" => $level_author
-							];
+							]);
+							array_push($wushu_levels_ids, $beta['id']);
 						}
 						else{
 							$roundpool[$beta["id"]] = [
@@ -305,6 +271,58 @@
 						exit; // Error!
 					}
 				}
+				$curl_inst_2 = curl_init();
+				curl_setopt_array($curl_inst_2, array(
+						CURLOPT_URL => 'https://level-gateway.fallguys.oncatapult.com/level/batch',
+						CURLOPT_RETURNTRANSFER => true,
+						CURLOPT_ENCODING => '',
+						CURLOPT_MAXREDIRS => 10,
+						CURLOPT_TIMEOUT => 0,
+						CURLOPT_FOLLOWLOCATION => true,
+						CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+						CURLOPT_CUSTOMREQUEST => 'POST',
+						CURLOPT_POSTFIELDS =>'{"share_codes":'. json_encode($share_codes_list) .'}',
+						CURLOPT_HTTPHEADER => array(
+                        			'User-Agent: UnityPlayer/2021.3.16f1 (UnityWebRequest/1.0, libcurl/7.84.0-DEV)',
+                        			'X-Unity-Version: 2021.3.16f1',
+                        			'Content-Type: application/json',
+                        			'Authorization: Bearer ' . $curl_done->token
+                			),
+        			));
+
+       				$curl_res_2 = curl_exec($curl_inst_2);
+       				curl_close($curl_inst_2);
+
+        			if($curl_res_2 == false){
+                			triggerErrorFailsafe("Could not connect to the Fall Guys server at this moment", "x_C_4200");
+        			}
+				$thing_counter = 0;
+        			$level_data = json_decode($curl_res_2);
+				foreach($level_data->snapshots as $xyz){
+					if(empty($xyz))
+                				continue;
+					$arr = json_decode(json_encode($level_data->snapshots), true);
+					$id = $share_codes_list[$thing_counter];
+                			$result = array_filter($arr, function($obj)use($id){return !empty($obj['share_code']) && $obj['share_code'] === $id;});
+					$rk = key($result);
+					//var_dump($result);
+					//var_dump($arr);
+					//exit;
+					//array_push($debug, ["api" => $xyz->share_code, "arr" => ]);
+					$wle_name = $result[$rk]["version_metadata"]["title"];
+					$level_author = "";
+					if(empty($result[$rk]["author"]["name_per_platform"]["eos"])){
+						//$level_data2 = json_decode(json_encode($xyz), true);
+						$level_author = $result[$rk]["author"]["name_per_platform"];
+					}
+					else
+						$level_author = $result[$rk]["author"]["name_per_platform"]["eos"];
+					$wushu_levels_list[$thing_counter]->name = $wle_name;
+					$wushu_levels_list[$thing_counter]->wushu_author = $level_author;
+					$roundpool[$wushu_levels_ids[$thing_counter]] = $wushu_levels_list[$thing_counter];
+					$thing_counter++;
+				}
+				array_push($debug, $share_codes_list);
 				$data_local["roundpool"] = $roundpool;
 				$shows = $data_local;
 			}
