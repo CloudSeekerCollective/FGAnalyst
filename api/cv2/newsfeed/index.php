@@ -108,10 +108,10 @@
 					"title" => getLocalisedString(substr($x->pages[0]->title, 18), $_final->localised_strings),
 					"message" => getLocalisedString(substr($x->pages[0]->message, 18), $_final->localised_strings),
 					// hey, if it works it works
-					"ends_at_desc" => substr($ends_at_string, 1),
-					"starts_at_desc" => substr($starts_at_string, 1),
-					"image" => $dlcimg,
-					"deeplink" => $x->pages[0]->deeplink
+					"ends_at_desc" => substr($ends_at_string, 1) ?? "",
+					"starts_at_desc" => substr($starts_at_string, 1) ?? "",
+					"image" => $dlcimg ?? "",
+					"deeplink" => $x->pages[0]->deeplink ?? ""
 				]);
 			}
 		}
