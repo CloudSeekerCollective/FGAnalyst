@@ -204,7 +204,7 @@
 									$min_players = $gr[key($gr)]["min_participants"];
 									$max_players = $gr[key($gr)]["max_participants"];
 								}
-								if($gr[key($gr)]["has_timer"])
+								if(!empty($gr[key($gr)]["has_timer"]) and $gr[key($gr)]["has_timer"])
 									$time_remaining = $gr[key($gr)]["duration"];
 								else
 									$time_remaining = 300;
@@ -321,6 +321,21 @@
 					$wushu_levels_list[$thing_counter]->wushu_author = $level_author;
 					$roundpool[$wushu_levels_ids[$thing_counter]] = $wushu_levels_list[$thing_counter];
 					$thing_counter++;
+					if($_LOG_WUSHU_LEVELS){
+                				if(empty($xyz->author->name_per_platform->eos)){
+                        				// you are given one fucking job to implement epic online services properly and not even your APIs fucking work
+                        				$usernames = array_values((array)$xyz->author->name_per_platform);
+                        				// IT GETS WORSE!!!
+							if(!empty($usernames[0]))
+								$epic_username = key((array)$xyz->author->name_per_platform) . "_" . $usernames[0];
+                					else
+								$epic_username = "";
+						}
+                				else{
+                        				$epic_username = $xyz->author->name_per_platform->eos;
+                				}
+                				$lfdl = mysqli_query($_WUSHU_ARCHIVE_DATABASE_LINK, "INSERT INTO levels (common_name, share_code, tags, playcount, likes, dislikes, min_players, max_players, author_name) VALUES ('". stripslashes(htmlspecialchars($xyz->version_metadata->title)) ."', '". $xyz->share_code ."', '". json_encode($xyz->version_metadata->creator_tags) ."', ". $xyz->stats->play_count .", ". $xyz->stats->likes .", ". $xyz->stats->dislikes .", 1, ". $xyz->version_metadata->max_player_count .", '". $epic_username ."') ON DUPLICATE KEY UPDATE common_name = VALUES(common_name),tags = VALUES(tags),playcount = VALUES(playcount),likes = VALUES(likes),dislikes = VALUES(dislikes),min_players = VALUES(min_players),max_players = VALUES(max_players),author_name = VALUES(author_name);");
+        				}
 				}
 				array_push($debug, $share_codes_list);
 				$data_local["roundpool"] = $roundpool;
@@ -329,8 +344,8 @@
 		}
 	}
 	catch(Exception $e){
-		header("HTTP/2 500 Internal Server Error");
-		crashWithErrorCode("Internal server error", "x_P_5000");
+		//header("HTTP/2 500 Internal Server Error");
+		crashWithErrorCode("Internal server error (". stripslashes(htmlspecialchars($e)), "x_P_5000");
 	}
 	$result_object = [
 		"xstatus" => "success",
