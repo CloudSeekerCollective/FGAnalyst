@@ -73,7 +73,7 @@
 		$curl_cv2_res = file_get_contents("../download-direct/". $cv2_lang ."/". $content_version .".json");
 		$_final = json_decode($curl_cv2_res);
 		$shops = array();
-		if(file_exists("../download-direct/" . $content_version . "-shops-". $cv2_lang .".json")){
+		if(/*false and */file_exists("../download-direct/" . $content_version . "-shops-". $cv2_lang .".json")){
 			foreach(json_decode(file_get_contents("../download-direct/" . $content_version . "-shops-". $cv2_lang .".json")) as $gamma){
 				array_push($debug, ["converted" => strtotime($gamma->ends_at), "actual" => $gamma->ends_at]);
 				if($gamma->ends_at >= time()){
@@ -103,7 +103,8 @@
 			if(!empty($x->storefronts)){
 				$data_local = [];
 				foreach($_final->sym_store_sections as $alpha){
-					if($alpha->storefront != $x->storefronts[0]){
+					$sf = $alpha->storefront;
+					if($sf != $x->storefronts[0]){
 						continue;
 					}
 					$arr = json_decode(json_encode($_final->target_conditions), true);
@@ -153,6 +154,9 @@
 							if(!empty($result)){
 								if(!empty($result[$key_2]["bundle_type"]["cosmetics"])){
 									$cosmetics = $result[$key_2]["bundle_type"]["cosmetics"];
+								}
+								if(!empty($result[$key_2]["bundle_type"]["extra"])){
+									$cosmetics += $result[$key_2]["bundle_type"]["extra"];
 								}
 								if(!empty($result[$key_2]["bundle_type"]["purchase_options"]["payment_items"]["item_id"]))
 									$currency->currency = $result[$key_2]["bundle_type"]["purchase_options"]["payment_items"]["item_id"];
@@ -228,8 +232,11 @@
 												case "cosmetics_emotes":
 													$arr = json_decode(json_encode($_final->cosmetics_emotes), true);
 												break;
-												case "costumes_nameplates":
-													$arr = json_decode(json_encode($_final->costumes_nameplates), true);
+												case "cosmetics_nameplates":
+													$arr = json_decode(json_encode($_final->cosmetics_nameplates), true);
+												break;
+												case "cosmetics_nicknames":
+													$arr = json_decode(json_encode($_final->cosmetics_nicknames), true);
 												break;
 												case "costumes_colour_schemes":
 													$arr = json_decode(json_encode($_final->costumes_colour_schemes), true);
@@ -286,6 +293,9 @@
 												case "cosmetics_nameplates":
 													$arr = json_decode(json_encode($_final->cosmetics_nameplates), true);
 												break;
+												case "cosmetics_nicknames":
+													$arr = json_decode(json_encode($_final->cosmetics_nicknames), true);
+												break;
 												case "costumes_colour_schemes":
 													$arr = json_decode(json_encode($_final->costumes_colour_schemes), true);
 												break;
@@ -308,10 +318,24 @@
 								if($result[$key_2]["bundle_type"]["bundle_type"] == "discount" and empty($result[$key_2]["bundle_type"]["purchase_options"]["payment_items"]["quantity"])){
 									$currency->quantity -= (int)$discount;
 								}
+								elseif($result[$key_2]["bundle_type"]["bundle_type"] == "default" and $result[$key_2]["bundle_type"]["purchase_options"]["payment_type"] == "iap"){
+									$currency->quantity = 0;
+									$currency->currency = "iap";
+									$arr = json_decode(json_encode($_final->iaps), true);
+									$id4 = $result[$key_2]["bundle_type"]["purchase_options"]["iap"];
+                							$result4 = array_filter($arr, function($obj)use($id4){return !empty($obj['id']) && $obj['id'] === $id4;});
+									$key_5 = key($result4);
+									if(empty($result4)){
+										var_dump($id4);
+									}
+									else{
+										$currency->quantity = (int)$result4[$key_5]["dailyspendincrease"] / 100 ?? 0;
+									}
+								}
 								elseif($result[$key_2]["bundle_type"]["bundle_type"] == "costume_set" and empty($result[$key_2]["bundle_type"]["purchase_options"]["payment_items"]["quantity"])){
 									$currency->quantity -= (int)$discount;
 								}
-								$bundle_tile_image = $result[$key_2]["bundle_tile_image"];
+								$bundle_tile_image = $result[$key_2]["bundle_tile_image"] ?? null;
 								$arr = json_decode(json_encode($_final->dlc_images), true);
 								$id = $bundle_tile_image;
                 						$result_3 = array_filter($arr, function($obj)use($id){return !empty($obj['id']) && $obj['id'] === $id;});
@@ -319,16 +343,63 @@
 								if(!empty($result_3)){
 									$bundle_tile_image = $result_3[$key_4]["dlc_item"]["base"] . $result_3[$key_4]["dlc_item"]["path"];
 								}
-								$bundle_bg = $result[$key_2]["bundle_background_custom_gradient_image"];
+								elseif(empty($result_3) and count($actual_cosmetics) == 1 and file_exists("../images/" . $actual_cosmetics[0]->id . ".png")){
+									$bundle_tile_image = "https://cloudseeker.xyz/api/cv2/images/" . $actual_cosmetics[0]->id . ".png";
+								}
+								elseif(empty($result_3) and count($actual_cosmetics) == 1 and !file_exists("../images/" . $actual_cosmetics[0]->id . ".png")){
+									$get_bundle_image = curl_init();
+									$thing3 = "Pattern";
+									switch($actual_cosmetics[0]->type){
+										case "patterns":
+											$thing3 = "Pattern";
+										break;
+										case "_punchlines":
+											$thing3 = "Celebration";
+										break;
+										case "_emotes":
+											$thing3 = "Emote";
+										break;
+										case "_nameplates":
+											$thing3 = "Banner";
+										break;
+									}
+									curl_setopt($get_bundle_image, CURLOPT_URL, "https://fallguysultimateknockout.fandom.com/api.php?action=cargoquery&format=json&limit=100&tables=". $thing3 ."&fields=id%2Cicon&where=id%3D'". $actual_cosmetics[0]->id ."'");
+									curl_setopt($get_bundle_image, CURLOPT_RETURNTRANSFER, true);
+									curl_setopt($get_bundle_image, CURLOPT_USERAGENT, "CloudSeekerEnterprise/1.0");
+									curl_setopt($get_bundle_image, CURLOPT_FOLLOWLOCATION, true);
+									curl_setopt($get_bundle_image, CURLOPT_MAXREDIRS, 10);
+									$gt = curl_exec($get_bundle_image);
+									curl_close($get_bundle_image);
+									if($gt){
+										$xgt = json_decode($gt);
+										//var_dump($xgt);
+										if(!empty($xgt->cargoquery[0])){
+											$dl = curl_init();
+											curl_setopt($dl, CURLOPT_URL, "https://fallguysultimateknockout.fandom.com/wiki/Special:FilePath/" . rawurlencode($xgt->cargoquery[0]->title->icon));
+											curl_setopt($dl, CURLOPT_RETURNTRANSFER, true);
+											curl_setopt($dl, CURLOPT_USERAGENT, "CloudSeekerEnterprise/1.0");
+											curl_setopt($dl, CURLOPT_FOLLOWLOCATION, true);
+											curl_setopt($dl, CURLOPT_MAXREDIRS, 10);
+											$xdl = curl_exec($dl);
+											curl_close($get_bundle_image);
+											if($xdl){
+												file_put_contents("../images/" . $actual_cosmetics[0]->id . ".png", $xdl);
+												$bundle_tile_image = "https://cloudseeker.xyz/api/cv2/images/" . $actual_cosmetics[0]->id . ".png";
+											}
+										}
+									}
+								}
+								$bundle_bg = $result[$key_2]["bundle_background_custom_gradient_image"] ?? null;
 								$id = $bundle_bg;
                 						$result_4 = array_filter($arr, function($obj)use($id){return !empty($obj['id']) && $obj['id'] === $id;});
 								$key_5 = key($result_4);
 								if(!empty($result_4)){
 									$bundle_bg = $result_4[$key_5]["dlc_item"]["base"] . $result_4[$key_5]["dlc_item"]["path"];
 								}
+								$dn = $result[$key_2]["display_name"] ?? "";
 								$bundles[$result[$key_2]["id"]] = [
 									"cost" => $currency,
-									"name" => getLocalisedString($result[$key_2]["display_name"], $_final->localised_strings),
+									"name" => getLocalisedString($dn, $_final->localised_strings),
 									"rarity" => $result[$key_2]["rarity"],
 									"layout" => $layout,
 									"images" => [
