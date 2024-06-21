@@ -133,14 +133,23 @@
 										if($beta->id == $show_id_3){
 											$show_info_3 = $b_count;
 											//array_push($debug, ["z" => $z, "beta" => $beta]);
+											$rewards_id = $beta->episode_reward_settings_id ?? "";
+											$rewards = null;
+											if(!empty($rewards_id)){
+												foreach($_final->settings_episode_rewards as $one){
+													if($one->id == $rewards_id){
+														$rewards = $one->winner;
+													}
+												}
+											}
 											if(empty($z->config->starts_at))
 												$starts_at = null;
 											else
 												$starts_at = strtotime($z->config->starts_at) + 3600;
 											if(empty($z->config->ends_at))
-												$ends_at = strtotime("2100-01-01T00:00:00") + 3600;
+												$ends_at = strtotime("2100-01-01T00:00:00");
 											else
-												$ends_at = strtotime($z->config->ends_at);
+												$ends_at = strtotime($z->config->ends_at) + 3600;
 											if(!empty($starts_at) and $ends_at > time()){
 												$d_count = 0;
 												$actual_show = $_final->shows[$show_info_3];
@@ -171,7 +180,7 @@
                                                                 				$result_dlcimg = array_filter($arr, function($obj)use($id){return !empty($obj['id']) && $obj['id'] === $id;});
                                                                 				$key_4 = key($result_dlcimg);
 												$dlcimg = $result_dlcimg[$key_4]["dlc_item"]["base"] . $result_dlcimg[$key_4]["dlc_item"]["path"];
-												$actual_show_fr = ["id" => $beta->id, "show_name" => $show_name, "show_desc" => $show_desc,  "begins" => $starts_at, "ends" => $ends_at, "roundpool" => $beta->default_episode, "image" => $dlcimg];
+												$actual_show_fr = ["id" => $beta->id, "show_name" => $show_name, "show_desc" => $show_desc,  "begins" => $starts_at, "ends" => $ends_at, "roundpool" => $beta->default_episode, "image" => $dlcimg, "victory_rewards" => $rewards];
 												$shows_local[$beta->id] = $actual_show_fr;
 											}
 											else{
