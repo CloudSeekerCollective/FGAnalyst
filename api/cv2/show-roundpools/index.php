@@ -84,8 +84,8 @@
 		$curl_cv2_res = file_get_contents("../download-direct/". $cv2_lang ."/". $content_version .".json");
 		$_final = json_decode($curl_cv2_res);
 		$shows = array();
-		if($intent == "live" and file_exists("../download-direct/" . $content_version . "-roundpool-". $cv2_lang ."-". $roundpool_obj .".json")){
-                        $shows = json_decode(file_get_contents("../download-direct/" . $content_version . "-roundpool-". $cv2_lang ."-". $roundpool_obj .".json"));
+		if($intent == "live" and file_exists("../download-direct/archive/" . $content_version . "-roundpool-". $cv2_lang ."-". $roundpool_obj .".json")){
+                        $shows = json_decode(file_get_contents("../download-direct/archive/" . $content_version . "-roundpool-". $cv2_lang ."-". $roundpool_obj .".json"));
                         $result_object = [
                                 "xstatus" => "success",
                                 "shows" => $shows,
@@ -95,8 +95,8 @@
                         echo json_encode($result_object);
                         exit;
                 }
-		elseif($intent == "custom" and file_exists("../download-direct/" . $content_version . "-customs-roundpool-". $cv2_lang ."-". $roundpool_obj .".json")){
-                        $shows = json_decode(file_get_contents("../download-direct/" . $content_version . "-customs-roundpool-". $cv2_lang ."-". $roundpool_obj .".json"));
+		elseif($intent == "custom" and file_exists("../download-direct/archive/" . $content_version . "-customs-roundpool-". $cv2_lang ."-". $roundpool_obj .".json")){
+                        $shows = json_decode(file_get_contents("../download-direct/archive/" . $content_version . "-customs-roundpool-". $cv2_lang ."-". $roundpool_obj .".json"));
                         $result_object = [
                                 "xstatus" => "success",
                                 "shows" => $shows,
@@ -140,7 +140,7 @@
 						}
 						$type = "unity";
 						$wushu_id = "0000-0000-0000";
-						if(empty($sec_id)){
+						if(empty($sec_id) || $y["scene_type"]["type"] == "ugc"){
 							if(!empty($y["scene_type"]["dlc_level"])){
 								$wle = $y["scene_type"]["dlc_level"];
 								$arr = json_decode(json_encode($_final->dlc_levels), true);
@@ -190,12 +190,14 @@
 						$cant_be_on = array();
 						$only_be_on = array();
 						$variations = array();
+						$finale = false;
 						if(!empty($beta["game_rules"])){
 							$gamerules = explode(".", $beta["game_rules"]);
 							$arr = json_decode(json_encode($_final->game_rules), true);
 							$id = $gamerules[1];
         	        				$gr = array_filter($arr, function($obj)use($id){return !empty($obj['id']) && $obj['id'] === $id;});
 							if(!empty($gr)){
+								$finale = $gr[key($gr)]['is_final_round'];
 								if($intent == "custom"){
 									$min_players = $gr[key($gr)]["min_participants_private_lobby"];
 									$max_players = $gr[key($gr)]["max_participants_private_lobby"];
@@ -210,6 +212,9 @@
 									$time_remaining = 300;
 							}
 						}
+						if(is_null($finale)){
+							$finale = false;
+						}
 						if(!empty($beta["level_variation"])){
 							$levelvars = explode(".", $beta["level_variation"]);
 							$arr = json_decode(json_encode($_final->levels_variation), true);
@@ -223,7 +228,7 @@
 							$cant_be_on = $alpha["cannot_be_on_these_stages"];
 							$only_be_on = $alpha["can_only_be_on_these_stages"];
 						}
-						if(empty($lvl_id)){
+						if($beta["scene_type"]["type"] == "ugc"){
 							$wle_name = "No name (presumably creative level?)";
 							$level_author = "";
 							if(!empty($beta["scene_type"]["dlc_level"])){
@@ -240,6 +245,7 @@
 								"name" => $wle_name, 
 								"id" => $beta['id'], 
 								"archetype" => $beta['level_archetype'],
+								"creative_gamemode" => "GAMEMODE_GAUNTLET", // default value btw
 								"type" => "wushu", 
 								"cannot_be_on_stages" => $cant_be_on, 
 								"can_only_be_on_stages" => $only_be_on,
@@ -248,7 +254,8 @@
 								"time_remaining" => $time_remaining,
 								"variations" => $variations,
 								"wushu_id" => $wushu_id,
-								"wushu_author" => $level_author
+								"wushu_author" => $level_author,
+								"is_final" => $finale
 							]);
 							array_push($wushu_levels_ids, $beta['id']);
 						}
@@ -263,7 +270,8 @@
 								"min_players" => $min_players,
 								"max_players" => $max_players,
 								"time_remaining" => $time_remaining,
-								"variations" => $variations
+								"variations" => $variations,
+								"is_final" => $finale
 							];
 						}
                 			}
@@ -319,6 +327,7 @@
 						$level_author = $result[$rk]["author"]["name_per_platform"]["eos"];
 					$wushu_levels_list[$thing_counter]->name = $wle_name;
 					$wushu_levels_list[$thing_counter]->wushu_author = $level_author;
+					$wushu_levels_list[$thing_counter]->creative_gamemode = $result[$rk]["version_metadata"]["game_mode_id"];
 					$roundpool[$wushu_levels_ids[$thing_counter]] = $wushu_levels_list[$thing_counter];
 					$thing_counter++;
 					if($_LOG_WUSHU_LEVELS){
@@ -368,8 +377,8 @@
 		crashWithErrorCode("Roundpool with this ID is not available!", "x_F_4040");
 	}
 	if($intent == "live")
-		file_put_contents("../download-direct/" . $content_version . "-roundpool-". $cv2_lang ."-". $roundpool_obj .".json", json_encode($shows));
+		file_put_contents("../download-direct/archive/" . $content_version . "-roundpool-". $cv2_lang ."-". $roundpool_obj .".json", json_encode($shows));
 	else
-		file_put_contents("../download-direct/" . $content_version . "-customs-roundpool-". $cv2_lang ."-". $roundpool_obj .".json", json_encode($shows))
+		file_put_contents("../download-direct/archive/" . $content_version . "-customs-roundpool-". $cv2_lang ."-". $roundpool_obj .".json", json_encode($shows))
 
 ?>
