@@ -84,7 +84,7 @@
 		$curl_cv2_res = file_get_contents("../download-direct/". $cv2_lang ."/". $content_version .".json");
 		$_final = json_decode($curl_cv2_res);
 		$shows = array();
-		if($intent == "live" and file_exists("../download-direct/archive/" . $content_version . "-roundpool-". $cv2_lang ."-". $roundpool_obj .".json")){
+		if($_CV2_USE_ARCHIVED and $intent == "live" and file_exists("../download-direct/archive/" . $content_version . "-roundpool-". $cv2_lang ."-". $roundpool_obj .".json")){
                         $shows = json_decode(file_get_contents("../download-direct/archive/" . $content_version . "-roundpool-". $cv2_lang ."-". $roundpool_obj .".json"));
                         $result_object = [
                                 "xstatus" => "success",
@@ -197,14 +197,14 @@
 							$id = $gamerules[1];
         	        				$gr = array_filter($arr, function($obj)use($id){return !empty($obj['id']) && $obj['id'] === $id;});
 							if(!empty($gr)){
-								$finale = $gr[key($gr)]['is_final_round'];
+								$finale = $gr[key($gr)]['is_final_round'] ?? false;
 								if($intent == "custom"){
-									$min_players = $gr[key($gr)]["min_participants_private_lobby"];
-									$max_players = $gr[key($gr)]["max_participants_private_lobby"];
+									$min_players = $gr[key($gr)]["min_participants_private_lobby"] ?? 1;
+									$max_players = $gr[key($gr)]["max_participants_private_lobby"] ?? 60;
 								}
 								else{
-									$min_players = $gr[key($gr)]["min_participants"];
-									$max_players = $gr[key($gr)]["max_participants"];
+									$min_players = $gr[key($gr)]["min_participants"] ?? 1;
+									$max_players = $gr[key($gr)]["max_participants"] ?? 60;
 								}
 								if(!empty($gr[key($gr)]["has_timer"]) and $gr[key($gr)]["has_timer"])
 									$time_remaining = $gr[key($gr)]["duration"];
@@ -241,7 +241,7 @@
 								}
 							}
 							array_push($share_codes_list, $wushu_id);
-							array_push($wushu_levels_list, (object)[
+							$wushu_levels_list[$wushu_id] = (object)[
 								"name" => $wle_name, 
 								"id" => $beta['id'], 
 								"archetype" => $beta['level_archetype'],
@@ -256,7 +256,7 @@
 								"wushu_id" => $wushu_id,
 								"wushu_author" => $level_author,
 								"is_final" => $finale
-							]);
+							];
 							array_push($wushu_levels_ids, $beta['id']);
 						}
 						else{
@@ -279,6 +279,8 @@
 						exit; // Error!
 					}
 				}
+				//$share_codes_list = array_values(array_unique($share_codes_list));
+				//$nodupe_levels_list = array_unique($wushu_levels_list);
 				$curl_inst_2 = curl_init();
 				curl_setopt_array($curl_inst_2, array(
 						CURLOPT_URL => 'https://level-gateway.fallguys.oncatapult.com/level/batch',
@@ -300,23 +302,27 @@
 
        				$curl_res_2 = curl_exec($curl_inst_2);
        				curl_close($curl_inst_2);
-
         			if($curl_res_2 == false){
                 			triggerErrorFailsafe("Could not connect to the Fall Guys server at this moment", "x_C_4200");
         			}
 				$thing_counter = 0;
         			$level_data = json_decode($curl_res_2);
-				foreach($level_data->snapshots as $xyz){
-					if(empty($xyz))
+				//var_dump($level_data->snapshots);
+				foreach($share_codes_list as $zyx){
+					//array_push($debug, ["api" => $xyz->share_code]);
+					if(empty($zyx)){
+						die("Error!");
+						//array_push($debug, "A level wasn't detected");
                 				continue;
+					}
 					$arr = json_decode(json_encode($level_data->snapshots), true);
-					$id = $share_codes_list[$thing_counter];
+					$id = $zyx;
                 			$result = array_filter($arr, function($obj)use($id){return !empty($obj['share_code']) && $obj['share_code'] === $id;});
 					$rk = key($result);
-					//var_dump($result);
-					//var_dump($arr);
+					$sc = $id;
+					//var_dump($wushu_levels_list);
 					//exit;
-					//array_push($debug, ["api" => $xyz->share_code, "arr" => ]);
+					//$sc = $result[$rk]["share_code"];
 					$wle_name = $result[$rk]["version_metadata"]["title"];
 					$level_author = "";
 					if(empty($result[$rk]["author"]["name_per_platform"]["eos"])){
@@ -325,25 +331,26 @@
 					}
 					else
 						$level_author = $result[$rk]["author"]["name_per_platform"]["eos"];
-					$wushu_levels_list[$thing_counter]->name = $wle_name;
-					$wushu_levels_list[$thing_counter]->wushu_author = $level_author;
-					$wushu_levels_list[$thing_counter]->creative_gamemode = $result[$rk]["version_metadata"]["game_mode_id"];
-					$roundpool[$wushu_levels_ids[$thing_counter]] = $wushu_levels_list[$thing_counter];
+					$wushu_levels_list[$sc]->name = $wle_name;
+					$wushu_levels_list[$sc]->wushu_author = $level_author;
+					$wushu_levels_list[$sc]->creative_gamemode = $result[$rk]["version_metadata"]["game_mode_id"];
+					$roundpool[$wushu_levels_list[$sc]->id] = $wushu_levels_list[$sc];
 					$thing_counter++;
+					$xyz = $result[$rk];
 					if($_LOG_WUSHU_LEVELS){
                 				if(empty($xyz->author->name_per_platform->eos)){
                         				// you are given one fucking job to implement epic online services properly and not even your APIs fucking work
-                        				$usernames = array_values((array)$xyz->author->name_per_platform);
+                        				$usernames = array_values((array)$xyz["author"]["name_per_platform"]);
                         				// IT GETS WORSE!!!
 							if(!empty($usernames[0]))
-								$epic_username = key((array)$xyz->author->name_per_platform) . "_" . $usernames[0];
+								$epic_username = key((array)$xyz["author"]["name_per_platform"]) . "_" . $usernames[0];
                 					else
 								$epic_username = "";
 						}
                 				else{
-                        				$epic_username = $xyz->author->name_per_platform->eos;
+                        				$epic_username = $xyz["author"]["name_per_platform"];
                 				}
-                				$lfdl = mysqli_query($_WUSHU_ARCHIVE_DATABASE_LINK, "INSERT INTO levels (common_name, share_code, tags, playcount, likes, dislikes, min_players, max_players, author_name) VALUES ('". stripslashes(htmlspecialchars($xyz->version_metadata->title)) ."', '". $xyz->share_code ."', '". json_encode($xyz->version_metadata->creator_tags) ."', ". $xyz->stats->play_count .", ". $xyz->stats->likes .", ". $xyz->stats->dislikes .", 1, ". $xyz->version_metadata->max_player_count .", '". $epic_username ."') ON DUPLICATE KEY UPDATE common_name = VALUES(common_name),tags = VALUES(tags),playcount = VALUES(playcount),likes = VALUES(likes),dislikes = VALUES(dislikes),min_players = VALUES(min_players),max_players = VALUES(max_players),author_name = VALUES(author_name);");
+                				$lfdl = mysqli_query($_WUSHU_ARCHIVE_DATABASE_LINK, "INSERT INTO levels (common_name, share_code, tags, playcount, likes, dislikes, min_players, max_players, author_name) VALUES ('". stripslashes(htmlspecialchars($xyz["version_metadata"]["title"])) ."', '". $xyz["share_code"] ."', '". json_encode($xyz["version_metadata"]["creator_tags"]) ."', ". $xyz["stats"]["play_count"] .", ". $xyz["stats"]["likes"] .", ". $xyz["stats"]["dislikes"] .", 1, ". $xyz["version_metadata"]["max_player_count"] .", '". $epic_username ."') ON DUPLICATE KEY UPDATE common_name = VALUES(common_name),tags = VALUES(tags),playcount = VALUES(playcount),likes = VALUES(likes),dislikes = VALUES(dislikes),min_players = VALUES(min_players),max_players = VALUES(max_players),author_name = VALUES(author_name);");
         				}
 				}
 				array_push($debug, $share_codes_list);
