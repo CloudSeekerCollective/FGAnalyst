@@ -24,7 +24,7 @@
 	}
 
 	$headers = array("X-Unity-Version: ". $_X_UNITY_VERSION, "Content-Type: application/json");
-	$content = '{"type":"EosSignIn","token":"'. $_EOS_ACCOUNT_TOKEN .'","properties":null,"userParameters":{"lang":"'. $lang .'","locale":"'. $loc .'"},"clientVersion":"'. $_GAME_VERSION .'","clientVersionSignature":"'. $_CLIENT_SIG .'","platform":"win","contentBranch":null}';
+	$content = '{"type":"EosSignIn","token":"'. $_EOS_ACCOUNT_TOKEN .'","properties":null,"userParameters":{"lang":"'. $lang .'","locale":"'. $loc .'"},"clientVersion":"'. $_GAME_VERSION .'","clientVersionSignature":"'. $_CLIENT_SIG .'","platform":"ios_ega","contentBranch":null}';
 
 	$curl_inst = curl_init();
 
@@ -37,7 +37,7 @@
 		CURLOPT_FOLLOWLOCATION => true,
 		CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
 		CURLOPT_POST => true,
-		CURLOPT_POSTFIELDS => '{"type":"EosSignIn","token":"'. $_EOS_ACCOUNT_TOKEN .'","properties":null,"userParameters":{"lang":"'. $lang .'","locale":"'. $loc .'"},"clientVersion":"'. $_GAME_VERSION .'","clientVersionSignature":"'. $_CLIENT_SIG .'","platform":"win","contentBranch":null}',
+		CURLOPT_POSTFIELDS => '{"type":"EosSignIn","token":"'. $_EOS_ACCOUNT_TOKEN .'","properties":null,"userParameters":{"lang":"'. $lang .'","locale":"'. $loc .'"},"clientVersion":"'. $_GAME_VERSION .'","clientVersionSignature":"'. $_CLIENT_SIG .'","platform":"'. $_DEFAULT_PLATFORM .'","contentBranch":null}',
 		CURLOPT_HTTPHEADER => array("X-Unity-Version: ". $_X_UNITY_VERSION, "Content-Type: application/json", "User-Agent: UnityPlayer/". $_X_UNITY_VERSION ." (UnityWebRequest/1.0, libcurl/7.84.0-DEV)")
 	));
 
@@ -49,14 +49,19 @@
 		triggerErrorFailsafe("Could not connect to the Fall Guys server at this moment", "x_C_4200");
 	}
 	$curl_done = json_decode((string)$curl_res);
+	$cv2_current = fopen("../../../../fg_response.json", "w+");
+        fwrite($cv2_current, json_encode($curl_done));
 	if(empty($curl_done->contentUrl)){
 		triggerErrorFailsafe("Could not connect to the Fall Guys server at this moment", "x_C_4300", $curlinfo);
 	}
 	$cv2_download_link = $curl_done->contentUrl;
-	$cv2_current = fopen("../../../../fg_response.json", "w+");
-	fwrite($cv2_current, json_encode($curl_done));
 
-	if(!file_exists($cv2_lang . "/" . $curl_done->contentVersion . ".json")){
+	$content_file = $curl_done->contentVersion . ".json";
+	if(isset($_GET["mobile"])){
+		$content_file = $curl_done->contentVersion . "_M.json";
+	}
+
+	if(!file_exists($cv2_lang . "/" . $content_file)){
 		header("Cache-Control: no-store, must-revalidate");
 		$curl_cv2 = curl_init();
 		curl_setopt($curl_cv2, CURLOPT_URL, $cv2_download_link);
@@ -69,7 +74,7 @@
 		if($curl_cv2_res == false){
 			crashWithErrorCode("Content file could not be downloaded", "x_F_4010");
 		}
-		$cv2_current = fopen($cv2_lang . "/" . $curl_done->contentVersion . ".json", "w+");
+		$cv2_current = fopen($cv2_lang . "/" . $content_file, "w+");
 		fwrite($cv2_current, $curl_cv2_res);
 	}
 	else{
@@ -82,7 +87,7 @@
 		"xstatus" => "success",
 		"locale" => $loc,
 		"notice" => null,
-		"download" => "https://cloudseeker.xyz/api/cv2/download-direct/" . $cv2_lang . "/" . $curl_done->contentVersion . ".json",
+		"download" => "https://cloudseeker.xyz/api/cv2/download-direct/" . $cv2_lang . "/" . $content_file,
 		"contentVersion" => $curl_done->contentVersion,
 		"environment" => [
 			"environment_id" => $_CATAPULT_ENVIRONMENT,
