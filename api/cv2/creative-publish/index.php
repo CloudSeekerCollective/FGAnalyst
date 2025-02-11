@@ -15,8 +15,8 @@
 	if(!isset($_POST["publish"]))
 		crashWithErrorCode("x_P_4501", "Please provide a publish status using the publish GET argument!");
 	$publish = stripslashes(htmlspecialchars($_POST["publish"]));
-	if($publish != "0" and $publish != "1")
-		crashWithErrorCode("x_P_4511", "The publish GET argument MUST be equal to 0 (to publish) or 1 (to unpublish).");
+	if($publish != "0" and $publish != "1" and $publish != "2" and $publish != "3")
+		crashWithErrorCode("x_P_4511", "The publish GET argument MUST be equal to 0 (to publish), 1 (to unpublish) or 3 (to DELETE).");
 	if(!empty($_POST["version"]))
 		$version = stripslashes(htmlspecialchars($_POST["version"]));
 	else
@@ -89,7 +89,7 @@
 		CURLOPT_FOLLOWLOCATION => true,
 		CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
 		CURLOPT_CUSTOMREQUEST => 'PATCH',
-		CURLOPT_POSTFIELDS =>'{ "level_state": '. $publish .', "is_completed": false }',
+		CURLOPT_POSTFIELDS =>'{ "level_state": '. $publish .', "is_completed": '. $_CV2_RED_KITE_ALARM .' }',
 		CURLOPT_HTTPHEADER => array(
 			'User-Agent: UnityPlayer/2021.3.16f1 (UnityWebRequest/1.0, libcurl/7.84.0-DEV)',
 			'X-Unity-Version: 2021.3.16f1',
@@ -108,8 +108,22 @@
 	}
 	$level_data = json_decode($curl_res_2);
 
-	if(empty($level_data->snapshot) and empty($version))
+	if(empty($level_data->snapshot) and empty($version) and $publish != "3")
 		crashWithErrorCode("No level with that code has been found.", "x_P_4440");
+	elseif($publish == "3"){
+		$return_object = [
+			"xstatus" => "success",
+			"contentVersion" => $curl_done->contentVersion,
+			"environment" => [
+	                        "environment_id" => $_CATAPULT_ENVIRONMENT,
+	                        "game_version" => $_GAME_VERSION,
+	                        "client_signature" => $_CLIENT_SIG
+	                ],
+			"debug" => $debug
+		];
+		echo(json_encode($return_object));
+		exit;
+	}
 	elseif(empty($level_data->snapshot) and !empty($version))
 		crashWithErrorCode("This level could not be published!", "x_P_4441");
 	//$level_data->snapshot->author->nickname_content_id = getLocalisedString($level_data->snapshot->author->nickname_content_id, $_final->localised_strings);
