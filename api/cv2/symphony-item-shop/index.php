@@ -54,8 +54,13 @@
 		$cv2_download_link = $curl_done->contentUrl;
 		$content_version = $curl_done->contentVersion;
 	}
+	$content_file = $curl_done->contentVersion . ".json";
+        if(isset($_GET["mobile"])){
+                $content_file = $curl_done->contentVersion . "_M.json";
+        }
+
 	try{
-		if(!file_exists("../download-direct/". $cv2_lang ."/". $content_version . ".json") and $should_try == true or empty(file_get_contents("../download-direct/". $cv2_lang ."/". $content_version . ".json")) and $should_try == true){
+		if(!file_exists("../download-direct/". $cv2_lang ."/". $content_version . ".json") and $should_try == true or empty(file_get_contents("../download-direct/". $cv2_lang ."/". $content_file)) and $should_try == true){
 			header("Cache-Control: no-store, must-revalidate");
 			$curl_cv2 = curl_init();
 			curl_setopt($curl_cv2, CURLOPT_URL, $cv2_download_link);
@@ -64,17 +69,17 @@
 			curl_setopt($curl_cv2, CURLOPT_RETURNTRANSFER, true);
 
 			$curl_cv2_res = curl_exec($curl_cv2);
-			$cv2_current = fopen("../download-direct/". $cv2_lang ."/". $content_version . ".json", "w+");
+			$cv2_current = fopen("../download-direct/". $cv2_lang ."/". $content_file, "w+");
 			fwrite($cv2_current, $curl_cv2_res);
 			if($curl_cv2_res == false){
 				crashWithErrorCode("Content file could not be downloaded", "x_F_4010");
 			}
 		}
-		$curl_cv2_res = file_get_contents("../download-direct/". $cv2_lang ."/". $content_version .".json");
+		$curl_cv2_res = file_get_contents("../download-direct/". $cv2_lang ."/". $content_file);
 		$_final = json_decode($curl_cv2_res);
 		$shops = array();
-		if(/*false and */file_exists("../download-direct/" . $content_version . "-shops-". $cv2_lang .".json")){
-			foreach(json_decode(file_get_contents("../download-direct/" . $content_version . "-shops-". $cv2_lang .".json")) as $gamma){
+		if($_CV2_USE_ARCHIVED and file_exists("../download-direct/archive/" . $content_version . "-shops-". $cv2_lang .".json")){
+			foreach(json_decode(file_get_contents("../download-direct/archive/" . $content_version . "-shops-". $cv2_lang .".json")) as $gamma){
 				array_push($debug, ["converted" => strtotime($gamma->ends_at), "actual" => $gamma->ends_at]);
 				if($gamma->ends_at >= time()){
 					array_push($shops, $gamma);
@@ -107,25 +112,47 @@
 					if($sf != $x->storefronts[0]){
 						continue;
 					}
-					$arr = json_decode(json_encode($_final->target_conditions), true);
-					if(empty($alpha->target_ids)){
-						continue;
-					}
-					$id = $alpha->target_ids[0];
-                			$result = array_filter($arr, function($obj)use($id){return !empty($obj['id']) && $obj['id'] === $id;});
-					$key = key($result);
+					//$alpha = $x;
+		                        if(empty($alpha->target_ids)){
+		                                continue;
+		                        }
+					//var_dump($alpha->target_ids);
+		                        $arr1 = json_decode(json_encode($_final->targets), true);
+		                        $id = $alpha->target_ids[0];
+		                        $result1 = array_filter($arr1, function($obj)use($id){return !empty($obj['id']) && $obj['id'] === $id;});
+		                        $key1 = key($result1);
+		                        if(!empty($result1) and !empty($result1[$key1]["condition_ids"][0])){
+		                                $id = $result1[$key1]["condition_ids"][0];
+		                        }
+		                        else{
+		                                continue;
+		                        }
+		                        $arr = json_decode(json_encode($_final->target_conditions), true);
+		                        //$id = $alpha->target_ids[0];
+		                        $result = array_filter($arr, function($obj)use($id){return !empty($obj['id']) && $obj['id'] === $id;});
+		                        $key = key($result);
                 			if(!empty($result) and
 						!empty($result[$key]["parameters"]) and
 						$result[$key]["parameters"]["data"]["operator"] == "between" and
-						strtotime($result[$key]["parameters"]["data"]["end"]) >= time()
+						strtotime($result[$key]["parameters"]["data"]["end"]) >= time() or
+						!empty($result) and
+						!empty($result[$key]["parameters"]) and
+						$result[$key]["parameters"]["data"]["operator"] == "more_than_or_equal_to" //and
+						//strtotime($result[$key]["parameters"]["data"]["end"]) >= time()
 					){
+						$target_id_type = $result[$key]["parameters"]["data"]["operator"];
 						$bundles = array();
 						$starts_at = 0;
 						$ends_at = 0;
 						if(!empty($result[$key]["parameters"]["data"]["start"]))
-							$starts_at = strtotime($result[$key]["parameters"]["data"]["start"]) + 3600;
+							$starts_at = strtotime($result[$key]["parameters"]["data"]["start"]);
 						if(!empty($result[$key]["parameters"]["data"]["end"]))
-							$ends_at = strtotime($result[$key]["parameters"]["data"]["end"]) + 3600;
+							$ends_at = strtotime($result[$key]["parameters"]["data"]["end"]);
+						if($target_id_type == "more_than_or_equal_to")
+							$ends_at = 2147483647;
+						if(!empty($alpha->refresh_cycle_length_seconds))
+                                                        continue;
+							//$shuffler = true;
 						foreach($alpha->bundle_slots as $beta){
 							$cosmetics = (array)[];
 							$layout = (object)["width" => $beta->layout->tile_width, "height" => $beta->layout->tile_height];
@@ -156,7 +183,9 @@
 									$cosmetics = $result[$key_2]["bundle_type"]["cosmetics"];
 								}
 								if(!empty($result[$key_2]["bundle_type"]["extra"])){
-									$cosmetics += $result[$key_2]["bundle_type"]["extra"];
+									foreach($result[$key_2]["bundle_type"]["extra"] as $extrastuff){
+										array_push($cosmetics, $extrastuff);
+									}
 								}
 								if(!empty($result[$key_2]["bundle_type"]["purchase_options"]["payment_items"]["item_id"]))
 									$currency->currency = $result[$key_2]["bundle_type"]["purchase_options"]["payment_items"]["item_id"];
@@ -241,6 +270,10 @@
 												case "costumes_colour_schemes":
 													$arr = json_decode(json_encode($_final->costumes_colour_schemes), true);
 												break;
+												case "currencies":
+													array_push($actual_cosmetics, (object)["name" => "KUDOS", "rarity" => "uncommon", "id" => "kudos", "type" => "currencies", "amount" => $delta["quantity"]]);
+													continue 2;
+												break;
 												default:
 													//Idk
 													continue 2;
@@ -299,6 +332,16 @@
 												case "costumes_colour_schemes":
 													$arr = json_decode(json_encode($_final->costumes_colour_schemes), true);
 												break;
+												case "cosmetics_emoticons":
+													$arr = json_decode(json_encode($_final->cosmetics_emoticons), true);
+												break;
+												case "cosmetics_phrases":
+													$arr = json_decode(json_encode($_final->cosmetics_phrases), true);
+												break;
+												case "currencies":
+													array_push($actual_cosmetics, (object)["name" => "KUDOS", "rarity" => "uncommon", "id" => "kudos", "type" => "currencies", "amount" => $delta["quantity"]]);
+													continue 2;
+												break;
 												default:
 													//Idk
 													continue 2;
@@ -356,6 +399,12 @@
 										case "_punchlines":
 											$thing3 = "Celebration";
 										break;
+										case "_emoticons":
+											$thing3 = "Emoji";
+										break;
+										case "_phrases":
+											$thing3 = "Phrase";
+										break;
 										case "_emotes":
 											$thing3 = "Emote";
 										break;
@@ -397,9 +446,13 @@
 									$bundle_bg = $result_4[$key_5]["dlc_item"]["base"] . $result_4[$key_5]["dlc_item"]["path"];
 								}
 								$dn = $result[$key_2]["display_name"] ?? "";
+								$bdesc = $result[$key_2]["bundle_description"] ?? "";
+								$subtitle = $result[$key_2]["bundle_type_subtitle"] ?? "";
 								$bundles[$result[$key_2]["id"]] = [
 									"cost" => $currency,
 									"name" => getLocalisedString($dn, $_final->localised_strings),
+									"subtitle" => getLocalisedString($subtitle, $_final->localised_strings),
+									"description" => getLocalisedString($bdesc, $_final->localised_strings),
 									"rarity" => $result[$key_2]["rarity"],
 									"layout" => $layout,
 									"images" => [
@@ -426,9 +479,9 @@
 	}
 	catch(Exception $e){
 		header("HTTP/2 500 Internal Server Error");
-		crashWithErrorCode("Internal server error", "x_P_5000");
+		crashWithErrorCode("Internal server error: ". var_export($e, true), "x_P_5000");
 	}
-	file_put_contents("../download-direct/" . $content_version . "-shops-". $cv2_lang .".json", json_encode($shops));
+	file_put_contents("../download-direct/archive/" . $content_version . "-shops-". $cv2_lang .".json", json_encode($shops));
 	usort($shops, 'sortByStartsAt');
 	$result_object = [
 		"xstatus" => "success",
