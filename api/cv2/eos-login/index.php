@@ -130,6 +130,7 @@
 				"xstatus" => "success",
 				"token" => $curl_done->token,
 				"display_name" => $curl_done->additionalProperties->EosDisplayName,
+				"support_id" => $curl_done->identities->CatapultSupport,
 				//"full_response" => $curl_done,
 				"environment" => [
 	                        	"environment_id" => $_CATAPULT_ENVIRONMENT,
