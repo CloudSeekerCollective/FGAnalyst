@@ -16,7 +16,7 @@
 			$content_version = json_decode(file_get_contents("../latest_content"))->version;
 			//echo($errorCode);
                         //echo('{"xstatus":"successWithPrecautions","download":"https://cloudseeker.xyz/api/cv2/download-direct/'. json_decode(file_get_contents("../latest_content"))->version>
-                        //$curl_cv2_res = file_get_contents("../download-direct/". $failsafeLoc ."/". $content_version .".json");
+                        //$curl_cv2_res = file_get_contents("../download-direct/". $failsafeLoc ."/". $content_file);
                 }
                 else{
                         crashWithErrorCode($error, $errorCode);
@@ -59,7 +59,12 @@
 		$cv2_download_link = $curl_done->contentUrl;
 		$content_version = $curl_done->contentVersion;
 	}
-	if(!file_exists("../download-direct/". $cv2_lang ."/". $content_version . ".json") and $should_try == true or empty(file_get_contents("../download-direct/". $cv2_lang ."/". $content_version . ".json")) and $should_try == true){
+	$content_file = $curl_done->contentVersion . ".json";
+        if(isset($_GET["mobile"])){
+                $content_file = $curl_done->contentVersion . "_M.json";
+        }
+
+	if(!file_exists("../download-direct/". $cv2_lang ."/". $content_file) and $should_try == true or empty(file_get_contents("../download-direct/". $cv2_lang ."/". $content_file)) and $should_try == true){
 		header("Cache-Control: no-store, must-revalidate");
 		$curl_cv2 = curl_init();
 		curl_setopt($curl_cv2, CURLOPT_URL, $cv2_download_link);
@@ -67,13 +72,13 @@
 		curl_setopt($curl_cv2, CURLOPT_HTTPHEADER, $headers);
 		curl_setopt($curl_cv2, CURLOPT_RETURNTRANSFER, true);
 		$curl_cv2_res = curl_exec($curl_cv2);
-		$cv2_current = fopen("../download-direct/". $cv2_lang ."/". $content_version . ".json", "w+");
+		$cv2_current = fopen("../download-direct/". $cv2_lang ."/". $content_file, "w+");
 		fwrite($cv2_current, $curl_cv2_res);
 		if($curl_cv2_res == false){
 			crashWithErrorCode("Content file could not be downloaded", "x_F_4010");
 		}
 	}
-	$curl_cv2_res = file_get_contents("../download-direct/". $cv2_lang ."/". $content_version .".json");
+	$curl_cv2_res = file_get_contents("../download-direct/". $cv2_lang ."/". $content_file);
 	$_final = json_decode($curl_cv2_res);
 	// relatively simple lmao
 	$return_object = [
