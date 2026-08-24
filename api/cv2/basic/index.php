@@ -80,6 +80,7 @@
 		$crown_ranks = array();
 		$dlc_images = array();
 		$boosts = array();
+		$ranked = array();
 		if(false and file_exists("../download-direct/" . $content_version . "-shops-". $cv2_lang .".json")){
 			foreach(json_decode(file_get_contents("../download-direct/" . $content_version . "-shops-". $cv2_lang .".json")) as $gamma){
 				array_push($debug, ["converted" => strtotime($gamma->ends_at), "actual" => $gamma->ends_at]);
@@ -144,6 +145,12 @@
 					case "costumes_colour_schemes":
 						$arr = json_decode(json_encode($_final->costumes_colour_schemes), true);
 					break;
+					case "cosmetics_emoticons":
+						$arr = json_decode(json_encode($_final->cosmetics_emoticons), true);
+					break;
+					case "cosmetics_phrases":
+						$arr = json_decode(json_encode($_final->cosmetics_phrases), true);
+					break;
 					default:
 						//Idk
 						continue 2;
@@ -172,6 +179,7 @@
 		"crown_ranks" => $crown_ranks,
 		"dlc_images" => $dlc_images,
 		"economy_boosts" => $boosts,
+		"ranked_cycles" => $ranked,
 		"contentVersion" => $content_version,
 		"environment" => [
                         "environment_id" => $_CATAPULT_ENVIRONMENT,
