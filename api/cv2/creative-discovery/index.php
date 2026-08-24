@@ -3,9 +3,9 @@
 	// CV2: A free and open source Fall Guys content viewing and downloading beacon created by The CloudSeeker Collective (https://cloudseeker.xyz) <admin@cloudseeker.xyz>.
 
 	header("Content-Type: application/json");
-	header("X-Powered-By: CloudSeeker CV2");
+	//header("X-Powered-By: CloudSeeker CV2");
 	include("../connect.php");
-	$debug = array("thing" => time() >= strtotime($_EOS_EXPIRE));
+	$debug = array("thing" => time() >= strtotime($_EOS_EXPIRE), "checkMod" => $checkMod, "lastmodded" => $lastmodded);
 
 	function triggerErrorFailsafe($error, $errorCode){
 		header("Cache-Control: no-store, must-revalidate");
@@ -32,7 +32,7 @@
 	curl_close($curl_inst);
 
 	if($curl_res == false){
-		triggerErrorFailsafe("Could not connect to the Fall Guys server at this moment", "x_C_4200");
+		triggerErrorFailsafe("Could not connect to the Fall Guys server at this moment - " . curl_getinfo($curl_res, CURLINFO_HTTP_CODE), "x_C_4200");
 	}
 	$curl_done = json_decode((string)$curl_res);
 	if(empty($curl_done->token)){
@@ -89,7 +89,8 @@
 		curl_close($curl_inst_2);
 
 		if($curl_res_2 == false){
-			triggerErrorFailsafe("Could not connect to the Fall Guys server at this moment", "x_C_4200");
+			if(curl_getinfo($curl_inst_2, CURLINFO_HTTP_CODE) == "429") triggerErrorFailsafe("FGAnalyst is currently ratelimited and cannot get level information! Please slow down and try again in a few minutes.", "x_C_4290");
+			else triggerErrorFailsafe("Could not connect to the Fall Guys server at this moment", "x_C_4200");
 		}
 		$level_data = json_decode($curl_res_2);
 		if(empty($level_data))
