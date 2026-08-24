@@ -74,7 +74,7 @@
 			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
 			CURLOPT_POST => true,
 			CURLOPT_POSTFIELDS => 'grant_type=device_code&deployment_id=8bedfebaf56f406ebab78986ada3f9b3&scope=basic_profile%20friends_list%20presence&device_code=' . $devcode,
-			CURLOPT_HTTPHEADER => array("User-Agent: PeaBoisHQ/1.0", "Authorization: Basic eHl6YTc4OTFtQURFRDB0UE5KRk9pRjhPbUkwRHdZMEo6OHcyc0R3TDUvR3VVamVWYkhaSXhlMUZBRndpK3R1UUkybXNTQ1ZJTytFQQ==")
+			CURLOPT_HTTPHEADER => array("User-Agent: CloudSeekerEnterprise/1.0 PeaBoisHQ/1.0", "Authorization: Basic eHl6YTc4OTFtQURFRDB0UE5KRk9pRjhPbUkwRHdZMEo6OHcyc0R3TDUvR3VVamVWYkhaSXhlMUZBRndpK3R1UUkybXNTQ1ZJTytFQQ==")
 		));
 		$_final;
 		$curl_res = curl_exec($curl_inst);
@@ -103,6 +103,8 @@
 		$curl_inst = curl_init();
 		if(!empty($_GET["access_token"]))
 			$devcode = stripslashes(htmlspecialchars($_GET["access_token"]));
+		else
+			crashWithErrorCode("Please provide an access token to continue!", "x_P_4700");
 		$headers = array("X-Unity-Version: ". $_X_UNITY_VERSION, "Content-Type: application/json");
 		$content = '{"type":"EosSignIn","token":"'. $devcode .'","properties":null,"userParameters":{"lang":"'. $lang .'","locale":"'. $loc .'"},"clientVersion":"'. $_GAME_VERSION .'","clientVersionSignature":"'. $_CLIENT_SIG .'","platform":"win","contentBranch":null}';
 
@@ -137,6 +139,45 @@
 	                        	"game_version" => $_GAME_VERSION,
 	                        	"client_signature" => $_CLIENT_SIG
 	                	]
+			];
+		}
+		//echo json_encode($curl_done);
+		echo json_encode($return_object);
+		exit;
+	}
+	elseif($stage == "4"){
+		$curl_inst = curl_init();
+		if(!empty($_GET["refresh_token"]))
+			$devcode = stripslashes(htmlspecialchars($_GET["refresh_token"]));
+		curl_setopt_array($curl_inst, array(
+			CURLOPT_URL => 'https://api.epicgames.dev/epic/oauth/v2/token',
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_ENCODING => '',
+			CURLOPT_MAXREDIRS => 10,
+			CURLOPT_TIMEOUT => 0,
+			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+			CURLOPT_POST => true,
+			CURLOPT_POSTFIELDS => 'grant_type=refresh_token&deployment_id=8bedfebaf56f406ebab78986ada3f9b3&scope=basic_profile%20friends_list%20presence&refresh_token=' . $devcode,
+			CURLOPT_HTTPHEADER => array("User-Agent: CloudSeekerEnterprise/1.0 PeaBoisHQ/1.0", "Authorization: Basic eHl6YTc4OTFtQURFRDB0UE5KRk9pRjhPbUkwRHdZMEo6OHcyc0R3TDUvR3VVamVWYkhaSXhlMUZBRndpK3R1UUkybXNTQ1ZJTytFQQ==")
+		));
+		$_final;
+		$curl_res = curl_exec($curl_inst);
+		$curl_done = json_decode($curl_res);
+		curl_close($curl_inst);
+		$return_object = [];
+		if(empty($curl_done->error)){
+			$return_object = [
+				"xstatus" => "success",
+				"access_token" => $curl_done->access_token,
+				"refresh_token" => $curl_done->refresh_token,
+				"next_stage" => "3",
+				//"full_response" => $curl_done,
+				"environment" => [
+		                        "environment_id" => $_CATAPULT_ENVIRONMENT,
+		                        "game_version" => $_GAME_VERSION,
+		                        "client_signature" => $_CLIENT_SIG
+		                ]
 			];
 		}
 		//echo json_encode($curl_done);
