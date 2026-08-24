@@ -52,12 +52,12 @@
 	curl_close($curl_inst);
 
 	if($curl_res == false){
-		triggerErrorFailsafe("Could not connect to the Fall Guys servers at this moment", "x_C_4200", $cv2_lang);
+		triggerErrorFailsafe("Could not connect to the Fall Guys servers at this moment. The servers did not respond...", "x_C_4200", $cv2_lang);
 		$should_try = false;
 	}
 	$curl_done = json_decode((string)$curl_res);
 	if(empty($curl_done->contentUrl)){
-		triggerErrorFailsafe("Could not connect to the Fall Guys servers at this moment", "x_C_4300", $cv2_lang);
+		triggerErrorFailsafe("Authentication has been rejected by the servers. Try again in a few minutes or contact support!", "x_C_4300", $cv2_lang);
 		$content_version = json_decode(file_get_contents("../latest_content"))->version;
 		$should_try = false;
 	}
@@ -78,7 +78,7 @@
 			$cv2_current = fopen("../download-direct/". $cv2_lang ."/". $content_version . ".json", "w+");
 			fwrite($cv2_current, $curl_cv2_res);
 			if($curl_cv2_res == false){
-				crashWithErrorCode("Content file could not be downloaded", "x_F_4010");
+				crashWithErrorCode("Content file could not be downloaded. The servers did not respond...", "x_F_4010");
 			}
 		}
 		$curl_cv2_res = file_get_contents("../download-direct/". $cv2_lang ."/". $content_version .".json");
@@ -168,6 +168,22 @@
                 		if(!empty($result)){
                         		$r = $result[key($result)];
                 		}
+				if($r["config"]["type"] == "collection_driven"){
+					foreach($r["config"]["level_collections"] as $sigma){
+						$arr = json_decode(json_encode($_final->levels_roundpool_collections), true);
+		                                $id = $sigma["level_collection_id"];
+		                                $result2 = array_filter($arr, function($obj)use($id){return !empty($obj['id']) && $obj['id'] === $id;});
+		                                if(!empty($result)){
+		                                        $r2 = $result2[key($result2)];
+		                                }
+						if($r2["config"]["type"] == "cms"){
+							foreach($r2["config"]["cms"]["levels"] as $rlevels){
+								array_push($r["stages"], array("round" => "levels_round." . $rlevels["level"]));
+							}
+						}
+					}
+				}
+				$creative_stages = [];
 				foreach($r["stages"] as $alpha){
 					$arr = json_decode(json_encode($_final->levels_round), true);
 					$id = explode(".", $alpha["round"]);
@@ -257,6 +273,7 @@
 								"wushu_author" => $level_author,
 								"is_final" => $finale
 							];
+							array_push($creative_stages, $wushu_levels_list[$wushu_id]);
 							array_push($wushu_levels_ids, $beta['id']);
 						}
 						else{
@@ -279,8 +296,6 @@
 						exit; // Error!
 					}
 				}
-				//$share_codes_list = array_values(array_unique($share_codes_list));
-				//$nodupe_levels_list = array_unique($wushu_levels_list);
 				$curl_inst_2 = curl_init();
 				curl_setopt_array($curl_inst_2, array(
 						CURLOPT_URL => 'https://level-gateway.fallguys.oncatapult.com/level/batch',
@@ -303,38 +318,41 @@
        				$curl_res_2 = curl_exec($curl_inst_2);
        				curl_close($curl_inst_2);
         			if($curl_res_2 == false){
-                			triggerErrorFailsafe("Could not connect to the Fall Guys server at this moment", "x_C_4200");
+                			triggerErrorFailsafe("Could not connect to the Fall Guys server at this moment. The servers did not respond...", "x_C_4200");
         			}
 				$thing_counter = 0;
         			$level_data = json_decode($curl_res_2);
-				//var_dump($level_data->snapshots);
-				foreach($share_codes_list as $zyx){
-					//array_push($debug, ["api" => $xyz->share_code]);
+				// give the creative levels their data
+				foreach($creative_stages as $zyx){
+					// MT Puts a non existent level in a roundpool
 					if(empty($zyx)){
-						die("Error!");
-						//array_push($debug, "A level wasn't detected");
+						header("HTTP/2 500 Internal Server Error");
+                				crashWithErrorCode("Internal server error. I'm not sure what happened!", "x_P_5000");
                 				continue;
 					}
 					$arr = json_decode(json_encode($level_data->snapshots), true);
-					$id = $zyx;
+					$id = $zyx->wushu_id;
                 			$result = array_filter($arr, function($obj)use($id){return !empty($obj['share_code']) && $obj['share_code'] === $id;});
 					$rk = key($result);
 					$sc = $id;
-					//var_dump($wushu_levels_list);
-					//exit;
-					//$sc = $result[$rk]["share_code"];
+					// keep the actual round ID here
+					$actual_id = $zyx->id;
+					if(empty($result[$rk])){
+						continue;
+					}
 					$wle_name = $result[$rk]["version_metadata"]["title"];
 					$level_author = "";
 					if(empty($result[$rk]["author"]["name_per_platform"]["eos"])){
-						//$level_data2 = json_decode(json_encode($xyz), true);
-						$level_author = $result[$rk]["author"]["name_per_platform"];
+						$level_author = array_key_first($result[$rk]["author"]["name_per_platform"]) . "_" . reset($result[$rk]["author"]["name_per_platform"]);
 					}
 					else
 						$level_author = $result[$rk]["author"]["name_per_platform"]["eos"];
-					$wushu_levels_list[$sc]->name = $wle_name;
-					$wushu_levels_list[$sc]->wushu_author = $level_author;
-					$wushu_levels_list[$sc]->creative_gamemode = $result[$rk]["version_metadata"]["game_mode_id"];
-					$roundpool[$wushu_levels_list[$sc]->id] = $wushu_levels_list[$sc];
+					$zyx->name = $wle_name;
+					$zyx->wushu_author = $level_author;
+					$zyx->creative_gamemode = $result[$rk]["version_metadata"]["game_mode_id"];
+					// DONE!
+					$roundpool[$actual_id] = $zyx;
+					// while you're at it, archive the level (if enabled)
 					$thing_counter++;
 					$xyz = $result[$rk];
 					if($_LOG_WUSHU_LEVELS){
@@ -360,8 +378,8 @@
 		}
 	}
 	catch(Exception $e){
-		//header("HTTP/2 500 Internal Server Error");
-		crashWithErrorCode("Internal server error (". stripslashes(htmlspecialchars($e)), "x_P_5000");
+		header("HTTP/2 500 Internal Server Error");
+		crashWithErrorCode("Internal server error. I'm not sure what happened! Technical details: (". stripslashes(htmlspecialchars($e)), "x_P_5000");
 	}
 	$result_object = [
 		"xstatus" => "success",
