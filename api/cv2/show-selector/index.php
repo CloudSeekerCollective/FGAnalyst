@@ -166,6 +166,7 @@
 									$show_info_2 = $a_count;
 									$mm_gate = $_final->matchmaking_gates[$show_info_2];
 									$show_id_3 = $mm_gate->show_id;
+									$got_sbmm = $mm_gate->is_sbmm_enabled ?? false;
 									$b_count = 0;
 									foreach($_final->shows as $beta){
 										if($beta->id == $show_id_3){
@@ -243,7 +244,7 @@
                                                                 				$result_dlcimg = array_filter($arr, function($obj)use($id){return !empty($obj['id']) && $obj['id'] === $id;});
                                                                 				$key_4 = key($result_dlcimg);
 												$dlcimg = $result_dlcimg[$key_4]["dlc_item"]["base"] . $result_dlcimg[$key_4]["dlc_item"]["path"];
-												$actual_show_fr = ["id" => $beta->id, "show_name" => $show_name, "show_desc" => $show_desc,  "begins" => $starts_at, "ends" => $ends_at, "roundpool" => $beta->default_episode, "image" => $dlcimg, "victory_rewards" => $rewards, "tag" => $_stag, "ready_up_allowed" => $beta->can_play_again ?? false, "lobby_sizes" => ["default" => $beta->size, "customs" => $beta->private_lobby_size]];
+												$actual_show_fr = ["id" => $beta->id, "show_name" => $show_name, "show_desc" => $show_desc,  "begins" => $starts_at, "ends" => $ends_at, "roundpool" => $beta->default_episode, "image" => $dlcimg, "victory_rewards" => $rewards, "tag" => $_stag, "ready_up_allowed" => $beta->can_play_again ?? false, "skill_based_matchmaking" => $got_sbmm, "lobby_sizes" => ["default" => $beta->size, "customs" => $beta->private_lobby_size]];
 												$shows_local[$beta->id] = $actual_show_fr;
 												$arr = [];
 												$_stag = [];
