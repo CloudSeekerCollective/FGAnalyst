@@ -400,7 +400,7 @@
 											$thing3 = "Celebration";
 										break;
 										case "_emoticons":
-											$thing3 = "Emoji";
+											$thing3 = "Emoticon";
 										break;
 										case "_phrases":
 											$thing3 = "Phrase";
@@ -425,6 +425,39 @@
 										if(!empty($xgt->cargoquery[0])){
 											$dl = curl_init();
 											curl_setopt($dl, CURLOPT_URL, "https://fallguysultimateknockout.fandom.com/wiki/Special:FilePath/" . rawurlencode($xgt->cargoquery[0]->title->icon));
+											curl_setopt($dl, CURLOPT_RETURNTRANSFER, true);
+											curl_setopt($dl, CURLOPT_USERAGENT, "CloudSeekerEnterprise/1.0");
+											curl_setopt($dl, CURLOPT_FOLLOWLOCATION, true);
+											curl_setopt($dl, CURLOPT_MAXREDIRS, 10);
+											$xdl = curl_exec($dl);
+											curl_close($get_bundle_image);
+											if($xdl){
+												file_put_contents("../images/" . $actual_cosmetics[0]->id . ".png", $xdl);
+												$bundle_tile_image = "https://cloudseeker.xyz/api/cv2/images/" . $actual_cosmetics[0]->id . ".png";
+											}
+										}
+									}
+								}
+								elseif($delta["group_id"] == "costumes_colour_schemes"){
+									$get_bundle_image = curl_init();
+									$thing3 = "Colour";
+									$bundle_image_url = "https://fallguysultimateknockout.fandom.com/api.php?action=cargoquery&format=json&limit=100&tables=". $thing3 ."&fields=id%2CprimaryColor%2CsecondaryColor&where=id%3D'". $delta["item_id"] ."'&formatversion=2";
+									curl_setopt($get_bundle_image, CURLOPT_URL, $bundle_image_url);
+									curl_setopt($get_bundle_image, CURLOPT_RETURNTRANSFER, true);
+									curl_setopt($get_bundle_image, CURLOPT_USERAGENT, "CloudSeekerEnterprise/1.0");
+									curl_setopt($get_bundle_image, CURLOPT_FOLLOWLOCATION, true);
+									curl_setopt($get_bundle_image, CURLOPT_MAXREDIRS, 10);
+									$gt = curl_exec($get_bundle_image);
+									curl_close($get_bundle_image);
+									if($gt){
+										$xgt = json_decode($gt);
+										var_dump($bundle_image_url);
+										if(!empty($xgt->cargoquery[0])){
+											$dl = curl_init();
+											$colour1 = str_replace("#", "", $xgt->cargoquery[0]->title->primaryColor);
+											$colour2 = str_replace("#", "", $xgt->cargoquery[0]->title->secondaryColor);
+											// Now I know there's an easier way to do this but i'm too lazy Lmfao
+											curl_setopt($dl, CURLOPT_URL, "https://cloudseeker.xyz/api/cv2/generate_colour.php?c1=" . $colour1 . "&c2=" . $colour2);
 											curl_setopt($dl, CURLOPT_RETURNTRANSFER, true);
 											curl_setopt($dl, CURLOPT_USERAGENT, "CloudSeekerEnterprise/1.0");
 											curl_setopt($dl, CURLOPT_FOLLOWLOCATION, true);
