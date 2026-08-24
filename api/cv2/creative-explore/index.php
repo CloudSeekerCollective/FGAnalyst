@@ -2,6 +2,7 @@
 
 	// CV2: A free and open source Fall Guys content viewing and downloading beacon created by The CloudSeeker Collective (https://cloudseeker.xyz) <admin@cloudseeker.xyz>.
 
+	//header("Cache-Control: public, max-age=20800");
 	header("Content-Type: application/json");
 	header("X-Powered-By: CloudSeeker CV2");
 	include("../connect.php");
@@ -11,6 +12,8 @@
 		header("Cache-Control: no-store, must-revalidate");
 		crashWithErrorCode($error, $errorCode);
 	}
+
+	//triggerErrorFailsafe("We are temporarily ratelimited by the Fall Guys servers. Explore Roundpool is disabled until the ratelimit expires!", "x_C_4201");
 
 	$headers = array("X-Unity-Version: ". $_X_UNITY_VERSION, "Content-Type: application/json");
 	$content = '{"type":"EosSignIn","token":"'. $_EOS_ACCOUNT_TOKEN .'","properties":null,"userParameters":{"lang":"'. $lang .'","locale":"'. $loc .'"},"clientVersion":"'. $_GAME_VERSION .'","clientVersionSignature":"'. $_CLIENT_SIG .'","platform":"win","contentBranch":null}';
@@ -136,18 +139,30 @@
 		return $final_level_data;
 	}
 
+	$collections = [];
 	foreach($_final->levels_roundpool as $prealpha){
 		if($prealpha->config->type == "collection_driven"){
 			foreach($prealpha->config->level_collections as $alpha){
 				$arr = json_decode(json_encode($_final->levels_roundpool_collections), true);
 				$id = $alpha->level_collection_id;
 				$coll = array_filter($arr, function($obj)use($id){return !empty($obj['id']) && $obj['id'] === $id;});
+
 				if(!empty($coll)){
 					$alpha = $coll[key($coll)];
 				}
 				else{
 					continue;
 				}
+
+				if(isset($_GET["only_list"])){
+					$propertyValues = array_column($collections, 'id');
+					if(in_array($id, $propertyValues)){
+						continue;
+					}
+					array_push($collections, $alpha/*->level_collection_id*/);
+					continue;
+				}
+
 				if($alpha["config"]["type"] != "disco"){
 					$final_level_data = getUPClassicRoundpoolInfo($alpha, $_final, $final_level_data);
 					continue;
@@ -174,12 +189,12 @@
 				$exstream = fopen("../../../../fg_explore.json", "w+");
 				$curl_res_2 = curl_exec($curl_inst_2);
 				curl_close($curl_inst_2);
-
-				if($curl_res_2 == false){
-					triggerErrorFailsafe("Could not connect to the Fall Guys server at this moment", "x_C_4201");
-				}
-				fwrite($exstream, $curl_res_2);
+				fwrite($exstream, curl_error($curl_inst_2));
 				fclose($exstream);
+				if($curl_res_2 == false){
+					if(curl_getinfo($curl_cv2, CURLINFO_HTTP_CODE) == "429") triggerErrorFailsafe("FGAnalyst is currently ratelimited and cannot get level information! Please slow down and try again in a few minutes.", "x_C_4290");
+					else triggerErrorFailsafe("Could not connect to the Fall Guys server at this moment (HTTPCode: " . curl_getinfo($curl_inst_2, CURLINFO_HTTP_CODE) . ")", "x_C_4201");
+				}
 				$level_data = json_decode($curl_res_2);
 				if(empty($level_data))
 					continue;
@@ -230,18 +245,35 @@
 			}
 		}
 	}
-	$return_object = [
-		"xstatus" => "success",
-		"level_data" => $final_level_data,
-		"contentVersion" => $curl_done->contentVersion,
-		"notice" => null,
-		"environment" => [
-                        "environment_id" => $_CATAPULT_ENVIRONMENT,
-                        "game_version" => $_GAME_VERSION,
-                        "client_signature" => $_CLIENT_SIG
-                ],
-		"debug" => $debug
-	];
+	if(isset($_GET["only_list"])){
+		$return_object = [
+			"xstatus" => "success",
+			"collection_list" => $collections,
+			"contentVersion" => $curl_done->contentVersion,
+			"notice" => null,
+			"environment" => [
+	                        "environment_id" => $_CATAPULT_ENVIRONMENT,
+	                        "game_version" => $_GAME_VERSION,
+	                        "client_signature" => $_CLIENT_SIG
+	                ],
+			"debug" => $debug
+		];
+	}
+	else{
+		$return_object = [
+			"xstatus" => "success",
+			"level_data" => $final_level_data,
+			"contentVersion" => $curl_done->contentVersion,
+			"notice" => null,
+			"environment" => [
+	                        "environment_id" => $_CATAPULT_ENVIRONMENT,
+	                        "game_version" => $_GAME_VERSION,
+	                        "client_signature" => $_CLIENT_SIG
+	                ],
+			"debug" => $debug
+		];
+	}
+
 	if($_HAS_SITEWIDE_ANNOUNCEMENT){ 
                 $return_object["notice"] = $_SITEWIDE_ANNOUNCEMENT_CONTENTS;
         }
