@@ -9,8 +9,11 @@
 	$should_try = true;
 
 	if(empty($_GET["share_code"]))
-		crashWithErrorCode("x_P_4500", "Please provide a share code using the share_code GET argument!");
+		crashWithErrorCode("Please provide a share code using the share_code GET argument!", "x_P_4500");
 	$share_code = stripslashes(htmlspecialchars($_GET["share_code"]));
+
+	if(in_array($share_code, $_REJECTED_WUSHU_LEVELS))
+		crashWithErrorCode("This level is no longer available. Contact us on Discord to learn more.", "x_P_4442", "default");
 	if(!empty($_GET["version"]))
 		$version = stripslashes(htmlspecialchars($_GET["version"]));
 	function triggerErrorFailsafe($error, $errorCode){
@@ -60,7 +63,10 @@
                         $curl_cv2_res = curl_exec($curl_cv2);
                         $cv2_current = fopen("../download-direct/". $cv2_lang ."/". $content_version . ".json", "w+");
                         fwrite($cv2_current, $curl_cv2_res);
-                        if($curl_cv2_res == false){
+                        if($curl_cv2_res == false and curl_getinfo($curl_cv2_res, CURLINFO_HTTP_CODE) == 429){
+                                crashWithErrorCode("FGAnalyst is currently ratelimited, please try again in a few minutes!", "x_F_4291");
+                        }
+			else if($curl_cv2_res == false){
                                 crashWithErrorCode("Content file could not be downloaded", "x_F_4010");
                         }
                 }
@@ -68,12 +74,13 @@
                 $_final = json_decode($curl_cv2_res);
 
 	if($curl_res == false){
-		triggerErrorFailsafe("Could not connect to the Fall Guys server at this moment", "x_C_4200");
+		triggerErrorFailsafe("Could not connect to the Fall Guys server at this moment (". curl_getinfo($curl_cv2, CURLINFO_HTTP_CODE) . ")", "x_C_4200");
 	}
 	$curl_done = json_decode((string)$curl_res);
 
 	if(empty($curl_done)){
-		triggerErrorFailsafe("Could not connect to the Fall Guys server at this moment", "x_C_4200");
+		if(curl_getinfo($curl_cv2, CURLINFO_HTTP_CODE) == "429") triggerErrorFailsafe("FGAnalyst is currently ratelimited and cannot get level information! Please slow down and try again in a few minutes.", "x_C_4290");
+		else triggerErrorFailsafe("Could not connect to the Fall Guys server at this moment (" . curl_getinfo($curl_cv2, CURLINFO_HTTP_CODE) . ")", "x_C_4200");
 	}
 	if(empty($curl_done->token)){
 		triggerErrorFailsafe("Could not connect to the Fall Guys server at this moment", "x_C_4300");
@@ -111,7 +118,8 @@
 	curl_close($curl_inst_2);
 
 	if($curl_res_2 == false){
-		triggerErrorFailsafe("Could not connect to the Fall Guys server at this moment", "x_C_4200");
+		if(curl_getinfo($curl_cv2, CURLINFO_HTTP_CODE) == "429") triggerErrorFailsafe("FGAnalyst is currently ratelimited and cannot get level information! Please slow down and try again in a few minutes.", "x_C_4290");
+		else triggerErrorFailsafe("Could not connect to the Fall Guys server at this moment... (" . curl_getinfo($curl_inst_2, CURLINFO_HTTP_CODE) . ")", "x_C_4200");
 	}
 	$level_data = json_decode($curl_res_2);
 
