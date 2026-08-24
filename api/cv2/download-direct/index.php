@@ -12,10 +12,12 @@
 		crashWithErrorCode("Did PTJ seriously plug in the teapot instead of the server?", "x_P_4180");
 	}
 
+	$latest_content = json_decode(file_get_contents("../latest_content")) ?? ["version" => "", "time" => 1];
+
 	function triggerErrorFailsafe($error, $errorCode, $extra){
 		header("Cache-Control: no-store, must-revalidate");
 		if(file_exists("../latest_content")){
-			echo('{"xstatus":"successWithPrecautions","download":"https://cloudseeker.xyz/api/cv2/download-direct/'. json_decode(file_get_contents("../latest_content"))->version .'.json","contentVersion":"'. json_decode(file_get_contents("../latest_content"))->version .'","notice":"The robots behind the scenes could not download the latest Fall Guys content file, so this file right here is the latest file known to CV2.", "debug":'. json_encode(["error" => $error, "errorCode" => $errorCode, "extra" => $extra]) .'}');
+			echo('{"xstatus":"successWithPrecautions","download":"https://cloudseeker.xyz/api/cv2/download-direct/'. $latest_content->version .'.json","contentVersion":"'. $latest_content->version .'","notice":"The robots behind the scenes could not download the latest Fall Guys content file, so this file right here is the latest file known to CV2.", "debug":'. json_encode(["error" => $error, "errorCode" => $errorCode, "extra" => $extra]) .'}');
 			exit;
 		}
 		else{
@@ -42,17 +44,17 @@
 	));
 
 	$curl_res = curl_exec($curl_inst);
-	$curlinfo = curl_getinfo($curl_inst);
+	$curlinfo = curl_getinfo($curl_inst, CURLINFO_HTTP_CODE);
 	curl_close($curl_inst);
 
 	if($curl_res == false){
-		triggerErrorFailsafe("Could not connect to the Fall Guys server at this moment", "x_C_4200");
+		triggerErrorFailsafe("Could not connect to the Fall Guys server at this moment. The servers did not respond...", "x_C_4200", [$curl_res, $curlinfo]);
 	}
 	$curl_done = json_decode((string)$curl_res);
 	$cv2_current = fopen("../../../../fg_response.json", "w+");
         fwrite($cv2_current, json_encode($curl_done));
 	if(empty($curl_done->contentUrl)){
-		triggerErrorFailsafe("Could not connect to the Fall Guys server at this moment", "x_C_4300", $curlinfo);
+		triggerErrorFailsafe("Authentication has been rejected by the servers. Try again in a few minutes or contact support!", "x_C_4300", $curlinfo);
 	}
 	$cv2_download_link = $curl_done->contentUrl;
 
@@ -72,7 +74,7 @@
 		$curl_cv2_res = curl_exec($curl_cv2);
 
 		if($curl_cv2_res == false){
-			crashWithErrorCode("Content file could not be downloaded", "x_F_4010");
+			crashWithErrorCode("Content file could not be downloaded. The servers did not respond...", "x_F_4010");
 		}
 		$cv2_current = fopen($cv2_lang . "/" . $content_file, "w+");
 		fwrite($cv2_current, $curl_cv2_res);
@@ -80,14 +82,15 @@
 	else{
 		$curl_cv2_res = file_get_contents($cv2_lang . "/" . $curl_done->contentVersion . ".json");
 	}
-	if(file_exists("../latest_content")){
-		file_put_contents("../latest_content", '{"version":"'. $curl_done->contentVersion .'"}');
+	if(file_exists("../latest_content") and $latest_content->version != $curl_done->contentVersion){
+		file_put_contents("../latest_content", '{"version":"'. $curl_done->contentVersion .'","time":"'. time() .'"}');
 	}
 	$return_object = [
 		"xstatus" => "success",
 		"locale" => $loc,
 		"notice" => null,
 		"download" => "https://cloudseeker.xyz/api/cv2/download-direct/" . $cv2_lang . "/" . $content_file,
+		"lastUpdateDetected" => $latest_content->time ?? -1,
 		"contentVersion" => $curl_done->contentVersion,
 		"environment" => [
 			"environment_id" => $_CATAPULT_ENVIRONMENT,
