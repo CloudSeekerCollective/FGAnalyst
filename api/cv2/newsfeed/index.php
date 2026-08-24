@@ -106,17 +106,21 @@
 						$starts_at_string = $starts_at_string . " " . getLocalisedString(substr($y->localised_value, 18), $_final->localised_strings);
 					}
 				}
+				$header = $x->pages[0]->header ?? "";
+				if(!empty($header)){
+					$header = getLocalisedString(substr($header, 18), $_final->localised_strings);
+				}
 				array_push($newsfeeds, (object)[
 					"starts_at" => strtotime($x->starts_at)+3600,
 					"ends_at" => strtotime($x->ends_at)+3600,
-					"header" => getLocalisedString(substr($x->pages[0]->header, 18), $_final->localised_strings),
+					"header" => $header,
 					"title" => getLocalisedString(substr($x->pages[0]->title, 18), $_final->localised_strings),
 					"message" => getLocalisedString(substr($x->pages[0]->message, 18), $_final->localised_strings),
 					// hey, if it works it works
 					"ends_at_desc" => substr($ends_at_string, 1) ?? "",
 					"starts_at_desc" => substr($starts_at_string, 1) ?? "",
 					"image" => $dlcimg ?? "",
-					"deeplink" => $x->pages[0]->deeplink ?? ""
+					"deeplink" => $x->pages[0]->deeplink_data->deeplink_type ?? ""
 				]);
 			}
 		}
