@@ -81,11 +81,13 @@
 		$curl_done = json_decode($curl_res);
 		curl_close($curl_inst);
 		$return_object = [];
+		$at = $curl_done->access_token ?? null;
+        $rt = $curl_done->refresh_token ?? null;
 		if(empty($curl_done->error)){
 			$return_object = [
 				"xstatus" => "success",
-				"access_token" => $curl_done->access_token,
-				"refresh_token" => $curl_done->refresh_token,
+				"access_token" => $at,
+				"refresh_token" => $rt,
 				"next_stage" => "3",
 				//"full_response" => $curl_done,
 				"environment" => [
